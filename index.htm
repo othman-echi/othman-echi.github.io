@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Academic homepage of Othman Echi, Professor of Mathematics at King Fahd University of Petroleum and Minerals.">
+  <meta name="author" content="Othman Echi">
+  <title>Othman Echi | Professor of Mathematics</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <script defer src="assets/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress" aria-hidden="true"><span id="scrollProgress"></span></div>
+
+  <header class="site-header" data-header>
+    <a class="brand" href="#top" aria-label="Othman Echi homepage">
+      <span class="brand-mark">OE</span>
+      <span>
+        <strong>Othman Echi</strong>
+        <small>Professor of Mathematics</small>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="site-nav" data-nav>
+      <a href="#research">Research</a>
+      <a href="#publications">Publications</a>
+      <a href="#teaching">Teaching</a>
+      <a href="#service">Service</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="eyebrow">King Fahd University of Petroleum and Minerals</p>
+        <h1 id="hero-title">Othman Echi</h1>
+        <p class="hero-role">Professor of Mathematics</p>
+        <p class="hero-copy">
+          Research in commutative algebra, general and spectral topology,
+          combinatorics on words, elementary number theory, category theory,
+          and theoretical computer science.
+        </p>
+        <div class="hero-actions" aria-label="Primary links">
+          <a class="button primary" href="assets/Othman_Echi_CV.pdf">Download CV</a>
+          <a class="button ghost" href="#publications">View Publications</a>
+        </div>
+        <dl class="hero-facts" aria-label="Research summary">
+          <div><dt data-count="66">66</dt><dd>scholarly contributions</dd></div>
+          <div><dt data-count="11">11</dt><dd>doctoral students</dd></div>
+          <div><dt data-count="13">13</dt><dd>academic descendants</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section intro" aria-label="Profile">
+      <div class="section-grid">
+        <div>
+          <p class="section-kicker">Profile</p>
+          <h2>Algebra, topology, combinatorics, and their interfaces.</h2>
+        </div>
+        <div class="intro-text">
+          <p>
+            Othman Echi is Professor of Mathematics in the Department of Mathematics
+            at King Fahd University of Petroleum and Minerals. His work connects
+            algebraic structures with topology and discrete mathematics, with
+            sustained contributions to spectral spaces, prime spectra, primitive
+            words, digital topologies, and Korselt-type number theory.
+          </p>
+          <div class="profile-links" aria-label="Academic profiles">
+            <a href="https://pure.kfupm.edu.sa/en/persons/othman-echi">KFUPM Pure</a>
+            <a href="https://orcid.org/0000-0002-0082-7644">ORCID</a>
+            <a href="https://scholar.google.com/citations?user=IQ_GzFQAAAAJ">Google Scholar</a>
+            <a href="https://dblp.org/pid/15/466">DBLP</a>
+            <a href="https://www.mathgenealogy.org/id.php?id=87712">Math Genealogy</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section research" id="research">
+      <div class="section-heading">
+        <p class="section-kicker">Research</p>
+        <h2>Core areas</h2>
+      </div>
+      <div class="research-map" aria-label="Research areas">
+        <article class="research-item">
+          <span>01</span>
+          <h3>Commutative Algebra</h3>
+          <p>Dimension theory, prime spectra, valuation theory, catenarian pairs, and related ring-theoretic structures.</p>
+        </article>
+        <article class="research-item">
+          <span>02</span>
+          <h3>General and Spectral Topology</h3>
+          <p>Sober spaces, spectral spaces, quasihomeomorphisms, Skula spaces, compactifications, and foliations.</p>
+        </article>
+        <article class="research-item">
+          <span>03</span>
+          <h3>Combinatorics on Words</h3>
+          <p>Primitive words, primitive deficiency, Hamming-compatible distances, and Levenshtein spheres.</p>
+        </article>
+        <article class="research-item">
+          <span>04</span>
+          <h3>Number Theory and Discrete Mathematics</h3>
+          <p>Korselt numbers and sets, alternating series estimates, digital topology, and applications to theoretical computer science.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section publications" id="publications">
+      <div class="section-heading wide">
+        <div>
+          <p class="section-kicker">Publications</p>
+          <h2>Recent and selected publications</h2>
+        </div>
+        <p>
+          A compact searchable list for the homepage. The full record is available in the CV.
+        </p>
+      </div>
+
+      <div class="pub-toolbar" aria-label="Publication controls">
+        <label class="search-box">
+          <span>Search</span>
+          <input id="publicationSearch" type="search" placeholder="Title, journal, coauthor, year">
+        </label>
+        <div class="filters" role="group" aria-label="Publication filters">
+          <button class="filter active" type="button" data-filter="all">All</button>
+          <button class="filter" type="button" data-filter="topology">Topology</button>
+          <button class="filter" type="button" data-filter="algebra">Algebra</button>
+          <button class="filter" type="button" data-filter="words">Words</button>
+          <button class="filter" type="button" data-filter="number">Number theory</button>
+        </div>
+      </div>
+
+      <div class="pub-status" id="publicationStatus" aria-live="polite"></div>
+      <div class="publication-list" id="publicationList"></div>
+    </section>
+
+    <section class="section split" id="teaching">
+      <div>
+        <p class="section-kicker">Teaching and Supervision</p>
+        <h2>Graduate teaching across algebra, topology, graph theory, and combinatorics.</h2>
+      </div>
+      <div class="timeline">
+        <article>
+          <time>2025/2026</time>
+          <h3>Enumerative Combinatorics</h3>
+          <p>MATH 645, KFUPM.</p>
+        </article>
+        <article>
+          <time>2023/2024</time>
+          <h3>General Topology I and Enumerative Combinatorics</h3>
+          <p>MATH 521 and MATH 645, KFUPM.</p>
+        </article>
+        <article>
+          <time>2022/2023</time>
+          <h3>Graph Theory</h3>
+          <p>MATH 525, KFUPM.</p>
+        </article>
+        <article>
+          <time>1994-present</time>
+          <h3>Graduate seminars and supervision</h3>
+          <p>Master's, doctoral, and habilitation supervision in algebra, topology, number theory, and related areas.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section service" id="service">
+      <div class="section-heading wide">
+        <div>
+          <p class="section-kicker">Service</p>
+          <h2>Academic leadership, editorial work, and reviewing.</h2>
+        </div>
+        <p>
+          Service includes editorial, reviewing, committee, and research-unit leadership responsibilities.
+        </p>
+      </div>
+      <div class="service-grid">
+        <article>
+          <h3>Editorial and Reviewing</h3>
+          <p>Editor of the Arabian Journal of Mathematics; reviewer for zbMATH Open and Mathematical Reviews.</p>
+        </article>
+        <article>
+          <h3>Research Leadership</h3>
+          <p>Director of the Research Unit "Algebra and Topology" at the University of Tunis El Manar, 2003-2014.</p>
+        </article>
+        <article>
+          <h3>Professional Service</h3>
+          <p>Vice-President of the Tunisian Mathematical Society, 1997-1998, and member of national recruitment juries in Tunisia.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section contact" id="contact">
+      <div class="contact-panel">
+        <p class="section-kicker">Contact</p>
+        <h2>Department of Mathematics, KFUPM</h2>
+        <p>King Fahd University of Petroleum and Minerals, Dhahran 31261, Saudi Arabia.</p>
+        <div class="contact-actions">
+          <a class="button primary" href="mailto:echi@kfupm.edu.sa">echi@kfupm.edu.sa</a>
+          <a class="button ghost" href="mailto:othman.echi@gmail.com">othman.echi@gmail.com</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="currentYear"></span> Othman Echi. Last updated May 2026.</p>
+    <a href="#top">Back to top</a>
+  </footer>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Othman Echi Academic Homepage
 
 This repository contains the academic homepage of **Professor Othman Echi**,
-Professor of Mathematics at King Fahd University of Petroleum and Minerals.
+Professor of Mathematics at University of Tunis el-Manar, Tunisia.
 
 The homepage presents research areas, selected publications, teaching,
 academic service, contact information, and a downloadable CV.

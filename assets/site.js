@@ -454,6 +454,22 @@ const publications = [
     title: "Spheres of strings under the Levenshtein distance",
     meta: "S. Algarni; Othman Echi. Axioms 14, no. 8, Article 550.",
     link: "https://doi.org/10.3390/axioms14080550"
+  },
+  {
+    number: 68,
+    year: 2025,
+    tags: ["words"],
+    title: "The primitive deficiency of two primitive strings",
+    meta: "Othman Echi. Acta Informatica 62, no. 3, Article 26, 19 pp.",
+    link: "https://doi.org/10.1007/s00236-025-00494-y"
+  },
+  {
+    number: 69,
+    year: 2025,
+    tags: ["topology"],
+    title: "The group of autohomeomorphisms of some digital topologies on the integers",
+    meta: "Othman Echi. Filomat 39, no. 9, 2985-3001.",
+    link: "https://doi.org/10.2298/FIL2509985E"
   }
 ];
 

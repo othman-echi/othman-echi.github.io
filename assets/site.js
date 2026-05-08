@@ -633,7 +633,7 @@ function initPublicationControls() {
 }
 
 function init() {
-  qsa(".section:not(.intro), .research-item, .service-grid article, .timeline article, .contact-panel, .news-item")
+  qsa(".section:not(.intro):not(.publications), .research-item, .service-grid article, .timeline article, .contact-panel, .news-item")
     .forEach((item) => item.setAttribute("data-reveal", ""));
 
   const yearEl = qs("#currentYear");

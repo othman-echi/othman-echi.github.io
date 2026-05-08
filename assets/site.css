@@ -576,6 +576,14 @@ img {
   margin-top: 10px;
 }
 
+.publications,
+.publication-list,
+.publication {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+
 .publication {
   display: grid;
   grid-template-columns: 84px 1fr;

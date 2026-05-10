@@ -513,7 +513,7 @@ function renderPublications() {
     <article class="publication">
       <time datetime="${publication.year}">${publication.year}</time>
       <div>
-        <h3>${escapeHtml("CV #" + publication.number + ". " + publication.title)}</h3>
+        <h3>${escapeHtml(publication.number + ". " + publication.title)}</h3>
         <p>${escapeHtml(publication.meta)}</p>
         ${publication.link ? `<a href="${publication.link}" rel="noopener">Open DOI</a>` : ""}
       </div>

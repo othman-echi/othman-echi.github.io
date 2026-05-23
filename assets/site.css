@@ -23,7 +23,8 @@ html {
 }
 
 section[id],
-#publicationList {
+#publicationList,
+#student-ranks {
   scroll-margin-top: calc(var(--header-height) + 18px);
 }
 
@@ -666,6 +667,127 @@ img {
   margin-top: 8px;
 }
 
+.timeline .timeline-highlight {
+  border-left-color: var(--gold);
+  background: #fbf7ef;
+}
+
+.timeline a {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.timeline a:hover {
+  text-decoration: underline;
+}
+
+.student-ranks {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(20, 32, 46, 0.05);
+}
+
+.student-ranks-heading {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.student-ranks-heading h3 {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.18;
+}
+
+.student-ranks-heading p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.rank-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.rank-summary div {
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.rank-summary dt {
+  color: var(--accent-strong);
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.rank-summary dd {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.rank-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.rank-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.rank-table th,
+.rank-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.rank-table thead th {
+  color: var(--accent-strong);
+  background: #f0f6f4;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rank-table tbody th {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.rank-table tbody tr:last-child th,
+.rank-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.rank-table td:nth-child(3) {
+  width: 84px;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.rank-table td:nth-child(4) {
+  width: 170px;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
 /* ----------------------------------------------------------
    SERVICE
 ---------------------------------------------------------- */
@@ -841,11 +963,13 @@ img {
   .section-grid,
   .split,
   .section-heading.wide,
+  .student-ranks-heading,
   .pub-toolbar {
     grid-template-columns: 1fr;
   }
 
   .news-list,
+  .rank-summary,
   .contact-grid {
     grid-template-columns: 1fr;
   }

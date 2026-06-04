@@ -470,6 +470,14 @@ const publications = [
     title: "The group of autohomeomorphisms of some digital topologies on the integers",
     meta: "Othman Echi. Filomat 39, no. 9, 2985-3001.",
     link: "https://doi.org/10.2298/FIL2509985E"
+  },
+  {
+    number: 70,
+    year: 2026,
+    tags: ["words"],
+    title: "Hamming\u2013Levenshtein gap of a string",
+    meta: "Monther Alfuraidan; Said Algarni; Othman Echi. RAIRO - Theoretical Informatics and Applications, 2026.",
+    link: "https://doi.org/10.1051/ita/2026020"
   }
 ];
 
@@ -479,6 +487,15 @@ publications.sort((a, b) => a.number - b.number);
 const state = {
   filter: "all",
   query: ""
+};
+
+const latestNewsItem = {
+  doi: "10.1051/ita/2026020",
+  year: 2026,
+  journal: "RAIRO - Theoretical Informatics and Applications",
+  title: "Hamming\u2013Levenshtein gap of a string",
+  collaborators: "Monther Alfuraidan and Said Algarni",
+  link: "https://doi.org/10.1051/ita/2026020"
 };
 
 const qs = (selector, root = document) => root.querySelector(selector);
@@ -521,6 +538,36 @@ function renderPublications() {
   `).join("");
 
   observeReveals();
+}
+
+function syncPublicationSummary() {
+  const count = Math.max(...publications.map((publication) => publication.number));
+  const publicationCount = qs(".hero-facts [data-count]");
+  if (!publicationCount) return;
+
+  publicationCount.dataset.count = String(count);
+  publicationCount.textContent = String(count);
+}
+
+function renderLatestNews() {
+  const list = qs(".news-list");
+  if (!list || qs(`[data-news-doi="${latestNewsItem.doi}"]`, list)) return;
+
+  const item = document.createElement("li");
+  item.className = "news-item";
+  item.dataset.newsDoi = latestNewsItem.doi;
+  item.setAttribute("data-reveal", "");
+  item.innerHTML = `
+    <time datetime="${latestNewsItem.year}">${latestNewsItem.year}</time>
+    <h3>New paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
+    <p>
+      &ldquo;${escapeHtml(latestNewsItem.title)}&rdquo;
+      (with ${escapeHtml(latestNewsItem.collaborators)}).
+    </p>
+    <a class="news-link" href="${latestNewsItem.link}" rel="noopener">Open DOI</a>
+  `;
+
+  list.prepend(item);
 }
 
 function getHeaderHeight() {
@@ -655,6 +702,8 @@ function init() {
   const yearEl = qs("#currentYear");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+  syncPublicationSummary();
+  renderLatestNews();
   initNavigation();
   initPublicationControls();
   renderPublications();

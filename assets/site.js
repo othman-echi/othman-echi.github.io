@@ -481,8 +481,8 @@ const publications = [
   }
 ];
 
-// Keep the homepage list aligned with the publication numbering in the CV.
-publications.sort((a, b) => a.number - b.number);
+// Show newest publications first while preserving CV numbering.
+publications.sort((a, b) => b.number - a.number);
 
 const state = {
   filter: "all",
@@ -500,6 +500,51 @@ const latestNewsItem = {
 
 const qs = (selector, root = document) => root.querySelector(selector);
 const qsa = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+const researchGateUrl = "https://www.researchgate.net/profile/Othman-Echi";
+
+function syncProfileLinks() {
+  qsa('a[href="https://pure.kfupm.edu.sa/en/persons/othman-echi"], a[href="https://dblp.org/pid/15/466"]').forEach((link) => {
+    const listItem = link.closest("li");
+    if (listItem && listItem.parentElement && listItem.parentElement.classList.contains("contact-lines")) {
+      listItem.remove();
+    } else {
+      link.remove();
+    }
+  });
+
+  const profileLinks = qs(".profile-links");
+  if (profileLinks && !qs(`a[href="${researchGateUrl}"]`, profileLinks)) {
+    const scholar = qs('a[href^="https://scholar.google.com/citations"]', profileLinks);
+    const link = document.createElement("a");
+    link.href = researchGateUrl;
+    link.textContent = "ResearchGate";
+    if (scholar) {
+      scholar.insertAdjacentElement("afterend", link);
+    } else {
+      profileLinks.append(link);
+    }
+  }
+
+  const contactBlock = qsa(".contact-block").find((block) => {
+    const heading = qs("h3", block);
+    return heading && heading.textContent.trim() === "Profiles";
+  });
+  const contactLines = contactBlock ? qs(".contact-lines", contactBlock) : null;
+  if (contactLines && !qs(`a[href="${researchGateUrl}"]`, contactLines)) {
+    const scholar = qs('a[href^="https://scholar.google.com/citations"]', contactLines);
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = researchGateUrl;
+    link.textContent = "ResearchGate";
+    item.append(link);
+    if (scholar && scholar.closest("li")) {
+      scholar.closest("li").insertAdjacentElement("afterend", item);
+    } else {
+      contactLines.append(item);
+    }
+  }
+}
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (ch) => ({
@@ -551,7 +596,7 @@ function syncPublicationSummary() {
 
 function renderLatestNews() {
   const list = qs(".news-list");
-  if (!list || qs(`[data-news-doi="${latestNewsItem.doi}"]`, list)) return;
+  if (!list || qs(`[data-news-doi="${latestNewsItem.doi}"]`, list) || qs(`a[href="${latestNewsItem.link}"]`, list)) return;
 
   const item = document.createElement("li");
   item.className = "news-item";
@@ -701,6 +746,8 @@ function init() {
 
   const yearEl = qs("#currentYear");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  syncProfileLinks();
 
   syncPublicationSummary();
   renderLatestNews();

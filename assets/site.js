@@ -498,12 +498,12 @@ const state = {
 };
 
 const latestNewsItem = {
-  doi: "10.1051/ita/2026020",
+  doi: "10.3390/sym18081365",
   year: 2026,
-  journal: "RAIRO - Theoretical Informatics and Applications",
-  title: "Hamming\u2013Levenshtein gap of a string",
-  collaborators: "Monther Alfuraidan and Said Algarni",
-  link: "https://doi.org/10.1051/ita/2026020"
+  journal: "Symmetry",
+  title: "Frobenius-Polynomial Second-Order Linear Differential Equations: Structure and Recognition in the Real-Indicial Case",
+  collaborators: "Husain Al-Attas and Said Algarni",
+  link: "https://doi.org/10.3390/sym18081365"
 };
 
 const qs = (selector, root = document) => root.querySelector(selector);

@@ -478,6 +478,14 @@ const publications = [
     title: "Hamming\u2013Levenshtein gap of a string",
     meta: "Monther Alfuraidan; Said Algarni; Othman Echi. RAIRO - Theoretical Informatics and Applications, 2026.",
     link: "https://doi.org/10.1051/ita/2026020"
+  },
+  {
+    number: 71,
+    year: 2026,
+    tags: ["algebra"],
+    title: "Frobenius-Polynomial Second-Order Linear Differential Equations: Structure and Recognition in the Real-Indicial Case",
+    meta: "H. Al-Attas; S. Algarni; Othman Echi. Symmetry 18, no. 8, Article 1365, 2026.",
+    link: "https://doi.org/10.3390/sym18081365"
   }
 ];
 

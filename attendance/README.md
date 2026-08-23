@@ -25,6 +25,8 @@ Private codes are credentials. Distribute each code only to its matching student
 
 Back up the register regularly from the **Backup** tab. Browser storage is device-specific and should not be the only long-term copy of important course records.
 
+The instructor PIN locks the application's normal interface; it is not whole-device encryption. Protect the instructor's Windows account and browser profile, enable device encryption where available, and keep exported backups and private-code CSV files in encrypted storage. Someone with full access to the instructor's operating-system account or browser developer tools may be able to inspect local browser storage.
+
 ## Files
 
 - `CLASS_REGISTER.html` — complete browser application
@@ -43,3 +45,7 @@ Back up the register regularly from the **Backup** tab. Browser storage is devic
 8. After check-in, close the session and pull the successful check-ins into the register.
 
 After replacing an older `CHECKIN_SERVER.gs`, run `resetToken()` once, copy the new 32-character instructor token into the register, and create a **new Apps Script deployment version** before using the private-record feature. The QR image is generated in the browser by QRCode.js. Change the rotating class code for every meeting and close the session promptly.
+
+## Local classroom-network mode
+
+Export `*-PRIVATE-access-codes.csv` from the **Roster** tab and place it beside `CHECKIN_LOCAL.py`. The server refuses to start without that file, and each check-in requires the student ID, matching private access code and current class code. The full `/list` and `/data` views accept connections only from the instructor's own computer; phones on the classroom network receive an instructor-only response. Keep the exported private-code CSV confidential.

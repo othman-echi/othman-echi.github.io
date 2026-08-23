@@ -6,14 +6,16 @@ Students check in from their phones over your Wi-Fi or your phone's
 hotspot. Nothing leaves the room; nothing is installed.
 
 HOW TO USE
-  1. Put this file in a folder together with the roster you exported
-     from CLASS_REGISTER.html  (Roster tab -> Export roster CSV).
+  1. Put this file in a folder together with the PRIVATE access-code CSV
+     exported from CLASS_REGISTER.html
+     (Roster tab -> Export private access codes).
   2. Double-click START_CHECKIN.bat  (or run:  py CHECKIN_LOCAL.py)
   3. Windows may ask to allow Python through the firewall.
      Tick PRIVATE networks and allow it. This happens once.
   4. The window prints an address like  http://192.168.43.1:8000
      and a 4-digit CODE. Write both on the board.
-  5. Students open the address, type their ID and the code.
+  5. Students open the address, type their ID, their private access code,
+     and the class code.
      Each check-in appears in this window as it happens.
   6. Press Ctrl+C to stop. The folder now holds
      checkins-YYYY-MM-DD.json  ->  import it in the app's Live tab.
@@ -27,7 +29,11 @@ Needs Python 3.7+ from python.org (tick "Add Python to PATH").
 
 import csv
 import datetime
+import hashlib
+import hmac
+import html
 import http.server
+import ipaddress
 import json
 import os
 import random
@@ -43,8 +49,9 @@ DATE = ""              # leave "" for today
 ONE_PER_DEVICE = True  # flag several check-ins from the same phone
 HERE = os.path.dirname(os.path.abspath(sys.argv[0] if getattr(sys, "frozen", False) else __file__))
 
-roster = {}    # lowercase id -> name
-records = {}   # lowercase id -> dict
+roster = {}        # lowercase id -> name
+access_codes = {}  # lowercase id -> SHA-256 digest of normalized private code
+records = {}       # lowercase id -> dict
 session_date = DATE or datetime.date.today().isoformat()
 code = CODE or str(random.randint(1000, 9999))
 
@@ -54,29 +61,49 @@ def find_roster():
     names = [f for f in os.listdir(HERE) if f.lower().endswith(".csv")]
     if not names:
         return None
-    exact = [f for f in names if "roster" in f.lower()]
-    return os.path.join(HERE, (exact or names)[0])
+    exact = [f for f in names if "private-access-codes" in f.lower()]
+    return os.path.join(HERE, exact[0]) if exact else None
+
+
+def normalize_access(value):
+    return "".join(ch for ch in (value or "").upper() if ch.isalnum())
+
+
+def access_digest(value):
+    return hashlib.sha256(normalize_access(value).encode("utf-8")).digest()
 
 
 def load_roster():
     path = find_roster()
     if not path:
-        print("  No CSV found in this folder - running WITHOUT a roster.")
-        print("  Any ID will be accepted and you reconcile later.\n")
-        return
+        print("  STOPPED: no *-PRIVATE-access-codes.csv file was found.")
+        print("  In the app, open Roster and choose Export private access codes.")
+        print("  Put that confidential CSV beside this file, then start again.\n")
+        return False
     with open(path, newline="", encoding="utf-8-sig") as fh:
-        for row in csv.reader(fh):
-            cells = [c.strip() for c in row if c.strip()]
-            if len(cells) < 2:
+        reader = csv.DictReader(fh)
+        headers = {str(h or "").strip().lower(): h for h in (reader.fieldnames or [])}
+        id_col = headers.get("id")
+        name_col = headers.get("name")
+        access_col = headers.get("private access code")
+        if not id_col or not name_col or not access_col:
+            print("  STOPPED: the private access-code CSV has unexpected columns.")
+            print("  Export a fresh copy from the app's Roster tab.\n")
+            return False
+        for row in reader:
+            sid = str(row.get(id_col) or "").strip()
+            name = str(row.get(name_col) or "").strip()
+            private_code = normalize_access(str(row.get(access_col) or ""))
+            if not sid or not name or len(private_code) < 12:
                 continue
-            sid, name = cells[0].lstrip("\ufeff").strip(), cells[1].strip()
-            ndig = lambda t: sum(1 for ch in t if ch.isdigit())
-            if ndig(sid) < 3 and ndig(name) < 3:
-                continue  # header row or junk
-            if ndig(sid) < 3 <= ndig(name):
-                sid, name = name, sid
-            roster[sid.lower()] = name
-    print("  Roster: %s  (%d students)\n" % (os.path.basename(path), len(roster)))
+            key = sid.lower()
+            roster[key] = name
+            access_codes[key] = access_digest(private_code)
+    if not roster:
+        print("  STOPPED: the private access-code CSV contains no usable students.\n")
+        return False
+    print("  Private roster: %s  (%d students)\n" % (os.path.basename(path), len(roster)))
+    return True
 
 
 def save():
@@ -119,6 +146,7 @@ FORM = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>%s</style></head><body><div class="w">
 <h1>Check in</h1><p class="sub">%s &middot; %s</p>
 <input id="sid" inputmode="numeric" placeholder="Student ID" autocomplete="off">
+<input id="access" type="password" placeholder="Private access code" autocomplete="off">
 <input id="code" inputmode="numeric" placeholder="Class code" autocomplete="off">
 <button id="go">Check in</button><div id="out"></div>
 <script>
@@ -127,6 +155,7 @@ function done(r){b.disabled=false;b.textContent="Check in";
  document.getElementById("out").innerHTML='<div class="msg '+(r.ok?"good":"bad")+'">'+r.msg+'</div>';}
 b.onclick=function(){b.disabled=true;b.textContent="Sending...";
  var d="sid="+encodeURIComponent(document.getElementById("sid").value)+
+       "&access="+encodeURIComponent(document.getElementById("access").value)+
        "&code="+encodeURIComponent(document.getElementById("code").value);
  var x=new XMLHttpRequest();x.open("POST","/checkin",true);
  x.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
@@ -145,7 +174,7 @@ def list_page():
     for r in sorted(records.values(), key=lambda x: x["time"]):
         flag = " &nbsp;<b>same device</b>" if ONE_PER_DEVICE and len(seen.get(r["ip"], [])) > 1 else ""
         rows += "<tr><td class='mono'>%s</td><td>%s</td><td class='mono'>%s%s</td></tr>" % (
-            r["sid"], r["name"], r["time"], flag)
+            html.escape(r["sid"]), html.escape(r["name"]), html.escape(r["time"]), flag)
     return ("<!DOCTYPE html><html><head><meta charset='utf-8'><title>Check-ins</title>"
             "<style>%s</style></head><body><div class='w' style='max-width:620px'>"
             "<h1>%d checked in</h1><p class='sub'>%s &middot; refresh to update</p>"
@@ -164,6 +193,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
         self.end_headers()
         self.wfile.write(raw)
 
@@ -172,12 +204,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             self.send(FORM % (CSS, "Attendance", session_date))
         elif path == "/list":
-            self.send(list_page())
+            if is_local_client(self.client_address[0]):
+                self.send(list_page())
+            else:
+                self.send("<p>Instructor access only.</p>", status=403)
         elif path == "/data":
-            payload = {"date": session_date,
-                       "checkins": [{"sid": r["sid"], "name": r["name"], "time": r["time"]}
-                                    for r in records.values()]}
-            self.send(json.dumps(payload, ensure_ascii=False), "application/json; charset=utf-8")
+            if is_local_client(self.client_address[0]):
+                payload = {"date": session_date,
+                           "checkins": [{"sid": r["sid"], "name": r["name"], "time": r["time"]}
+                                        for r in records.values()]}
+                self.send(json.dumps(payload, ensure_ascii=False), "application/json; charset=utf-8")
+            else:
+                self.send('{"error":"Instructor access only."}', "application/json; charset=utf-8", 403)
         else:
             self.send("<p>Not here.</p>", status=404)
 
@@ -190,20 +228,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
         form = urllib.parse.parse_qs(body)
         sid = (form.get("sid", [""])[0] or "").strip()
         given = (form.get("code", [""])[0] or "").strip()
+        private_code = (form.get("access", [""])[0] or "").strip()
         ip = self.client_address[0]
-        self.send(json.dumps(check_in(sid, given, ip), ensure_ascii=False),
+        self.send(json.dumps(check_in(sid, given, private_code, ip), ensure_ascii=False),
                   "application/json; charset=utf-8")
 
 
-def check_in(sid, given, ip):
-    if not sid:
-        return {"ok": False, "msg": "Type your student ID."}
-    if given != code:
-        return {"ok": False, "msg": "Wrong class code."}
+def check_in(sid, given, private_code, ip):
     key = sid.lower()
-    if roster and key not in roster:
-        return {"ok": False, "msg": "That ID is not on this section roster."}
-    name = roster.get(key, sid)
+    supplied = access_digest(private_code)
+    expected = access_codes.get(key, b"\x00" * 32)
+    valid_identity = bool(sid and private_code and key in roster and hmac.compare_digest(supplied, expected))
+    if not valid_identity or not hmac.compare_digest(given, code):
+        return {"ok": False, "msg": "Check your student ID, private access code, and class code."}
+    name = roster[key]
     if key in records:
         return {"ok": True, "msg": "You are already checked in, " + name + "."}
     now = datetime.datetime.now().strftime("%H:%M:%S")
@@ -214,6 +252,16 @@ def check_in(sid, given, ip):
         dupe = "   <-- same device as an earlier check-in"
     print("  %s  %-12s %s%s" % (now, sid, name, dupe))
     return {"ok": True, "msg": "Checked in - " + name}
+
+
+def is_local_client(value):
+    try:
+        address = ipaddress.ip_address(value)
+        if address.is_loopback:
+            return True
+        return bool(address.version == 6 and address.ipv4_mapped and address.ipv4_mapped.is_loopback)
+    except ValueError:
+        return False
 
 
 def my_ips():
@@ -239,7 +287,9 @@ def main():
     print("")
     print("  CLASS REGISTER - local check-in")
     print("  " + "-" * 46)
-    load_roster()
+    if not load_roster():
+        input("  Press Enter to close.")
+        return
     ips = my_ips()
     print("  Students open:")
     for ip in ips:

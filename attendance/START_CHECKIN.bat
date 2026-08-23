@@ -18,6 +18,15 @@ if not exist "CHECKIN_LOCAL.py" (
   goto end
 )
 
+dir /b "*-PRIVATE-access-codes.csv" >nul 2>nul
+if errorlevel 1 (
+  echo.
+  echo   No private access-code CSV was found.
+  echo   In the register's Roster tab, choose Export private access codes,
+  echo   then put that confidential CSV in this folder.
+  goto end
+)
+
 if defined PYEXE if exist "%PYEXE%" set PY="%PYEXE%"
 
 rem -- a real Python answers -V; the Microsoft Store placeholder does not

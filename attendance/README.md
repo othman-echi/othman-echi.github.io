@@ -9,7 +9,7 @@ This project is a static, instructor-owned class register designed for deploymen
 - Multiple class sections and CSV roster import
 - Instructor attendance marking: present, late, excused, absent
 - Scanner-friendly student-ID kiosk, with optional camera QR scanning when supported
-- Student QR check-in through the included Google Apps Script service
+- Student QR check-in requiring ID, a rotating class code and a unique private access code
 - Quizzes, exams, oral exams, projects and final exams
 - Weighted totals or custom formulas, with mean, median, high score and standard deviation
 - Attendance thresholds, student reports and personalised warning e-mail drafts
@@ -17,7 +17,11 @@ This project is a static, instructor-owned class register designed for deploymen
 
 ## Privacy model
 
-The GitHub Pages site is only the application shell. Rosters, scores and attendance records are stored in the instructor's browser and are not committed to the public website. The QR check-in service receives only student IDs and names. It does not receive scores or e-mail addresses.
+The GitHub Pages site is only the application shell. No roster, score or attendance value is committed to the public website. The instructor's browser copy is protected by a required PIN and automatically locks after inactivity.
+
+When the optional Google Apps Script service is used, it stores the roster and private student records in a spreadsheet owned by the instructor's Google account. E-mail addresses are never uploaded. Each student's random 16-character access code is converted to a SHA-256 hash before the record is stored. The public endpoint returns a record only when the student ID and matching private code are both correct, and it returns only that student's attendance and scores. Repeated failed record-access attempts are temporarily throttled.
+
+Private codes are credentials. Distribute each code only to its matching student, preferably through the student's institutional e-mail. A student who deliberately shares their code also shares access to their own record; no website can prevent voluntary credential sharing.
 
 Back up the register regularly from the **Backup** tab. Browser storage is device-specific and should not be the only long-term copy of important course records.
 
@@ -32,8 +36,10 @@ Back up the register regularly from the **Backup** tab. Browser storage is devic
 1. Open `CHECKIN_SERVER.gs` and follow the setup instructions at its top.
 2. Deploy it as a Google Apps Script web app.
 3. In the register's **QR check-in** tab, paste the web-app URL and token.
-4. Publish the roster, open the current session and show the generated QR code.
-5. After check-in, close the session and pull the successful check-ins into the register.
+4. Export private access codes from **Roster** and distribute each row only to its matching student.
+5. Publish the section, open the current session and show the generated QR code.
+6. Students check in using their ID, private access code and the rotating class code.
+7. Share the private record link; the same ID and private code reveal only the matching student's record.
+8. After check-in, close the session and pull the successful check-ins into the register.
 
-The QR image is generated in the browser by QRCode.js. The rotating class code should be changed for every meeting and the session should be closed promptly.
-
+After replacing an older `CHECKIN_SERVER.gs`, run `resetToken()` once, copy the new 32-character instructor token into the register, and create a **new Apps Script deployment version** before using the private-record feature. The QR image is generated in the browser by QRCode.js. Change the rotating class code for every meeting and close the session promptly.

@@ -46,7 +46,7 @@ function setup() {
 
   var tok = P.getProperty('TOKEN');
   if (!tok) {
-    tok = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
+    tok = Utilities.getUuid().replace(/-/g, '');
     P.setProperty('TOKEN', tok);
   }
   Logger.log('TOKEN: ' + tok);
@@ -55,7 +55,7 @@ function setup() {
   return tok;
 }
 function resetToken() {
-  var tok = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
+  var tok = Utilities.getUuid().replace(/-/g, '');
   P.setProperty('TOKEN', tok);
   Logger.log('New TOKEN: ' + tok);
   return tok;
@@ -82,6 +82,41 @@ function checkToken(t) {
   var real = P.getProperty('TOKEN');
   if (!real || String(t) !== String(real)) throw new Error('Wrong token.');
 }
+function normalizedId(v) { return String(v || '').trim().toLowerCase(); }
+function normalizedAccess(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function digestHex(v) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v || ''), Utilities.Charset.UTF_8)
+    .map(function (b) { var n = b < 0 ? b + 256 : b; return ('0' + n.toString(16)).slice(-2); }).join('');
+}
+function sameSecret(a, b) {
+  a = String(a || ''); b = String(b || '');
+  if (a.length !== b.length) return false;
+  var d = 0; for (var i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+function safeNumber(v) { if (v === null || v === undefined || v === '') return null; var n = Number(v); return isFinite(n) ? n : null; }
+function privatePayload(payload) {
+  payload = payload || {};
+  var out = { name: String(payload.name || ''), students: [], records: {}, warnAt: safeNumber(payload.warnAt), limit: safeNumber(payload.limit) };
+  var roster = {};
+  (payload.students || []).forEach(function (st) {
+    var sid = String(st.sid || '').trim(); if (!sid) return;
+    var key = normalizedId(sid); roster[key] = true;
+    out.students.push({ sid: sid, name: String(st.name || sid) });
+  });
+  Object.keys(payload.records || {}).forEach(function (rawKey) {
+    var src = payload.records[rawKey] || {}, key = normalizedId(src.sid || rawKey);
+    if (!roster[key] || !src.access) return;
+    var att = src.attendance || {};
+    out.records[key] = {
+      name: String(src.name || ''), sid: String(src.sid || ''), codeHash: digestHex(normalizedAccess(src.access)),
+      attendance: { held: safeNumber(att.held), present: safeNumber(att.present), late: safeNumber(att.late), excused: safeNumber(att.excused), absent: safeNumber(att.absent), unmarked: safeNumber(att.unmarked), pct: safeNumber(att.pct) },
+      scores: (src.scores || []).map(function (score) { return { name: String(score.name || ''), kind: String(score.kind || ''), max: safeNumber(score.max), score: safeNumber(score.score) }; }),
+      total: safeNumber(src.total)
+    };
+  });
+  return out;
+}
 function getSection(key) {
   var f = findRow('sections', 0, key);
   if (!f) return null;
@@ -100,7 +135,8 @@ function getLive(key) {
 function publish(d) {
   checkToken(d.token);
   var sh = sheet('sections'), f = findRow('sections', 0, d.key);
-  var row = [d.key, d.payload.name || d.key, JSON.stringify(d.payload), new Date()];
+  var payload = privatePayload(d.payload);
+  var row = [d.key, payload.name || d.key, JSON.stringify(payload), new Date()];
   if (f) sh.getRange(f.i, 1, 1, 4).setValues([row]);
   else sh.appendRow(row);
   return { ok: true, students: (d.payload.students || []).length };
@@ -131,14 +167,17 @@ function listCheckins(d) {
 }
 
 /* ------------------------- student API ------------------------- */
-function doCheckin(key, sid, code) {
+function doCheckin(key, sid, code, access) {
   sid = String(sid || '').trim();
-  if (!sid) return { ok: false, msg: 'Type your student ID.' };
+  access = String(access || '').trim();
+  if (!sid || !access) return { ok: false, msg: 'Enter your student ID and private access code.' };
   var live = getLive(key);
   if (!live.open) return { ok: false, msg: 'Check-in is not open right now.' };
   if (live.code && String(code || '').trim() !== live.code) return { ok: false, msg: 'Wrong class code.' };
   var sec = getSection(key);
   if (!sec) return { ok: false, msg: 'This section is not published yet.' };
+  var record = (sec.records || {})[normalizedId(sid)];
+  if (!record || !sameSecret(record.codeHash, digestHex(normalizedAccess(access)))) return { ok: false, msg: 'The student ID or private access code is not valid.' };
   var me = null;
   (sec.students || []).forEach(function (s) { if (String(s.sid).toLowerCase() === sid.toLowerCase()) me = s; });
   if (!me) return { ok: false, msg: 'That ID is not on this section roster.' };
@@ -155,8 +194,20 @@ function doCheckin(key, sid, code) {
   } finally { lock.releaseLock(); }
   return { ok: true, name: me.name, msg: 'Checked in.' };
 }
-function myRecord(key, sid) {
-  return { ok: false, msg: 'Student grade records are not published by the check-in service.' };
+function myRecord(key, sid, access) {
+  sid = String(sid || '').trim();
+  access = String(access || '').trim();
+  var denied = { ok: false, msg: 'The student ID or private access code is not valid.' };
+  if (!sid || !access) return denied;
+  var cache = CacheService.getScriptCache(), attemptKey = 'record-' + digestHex(String(key) + '|' + normalizedId(sid)).slice(0, 36);
+  var attempts = Number(cache.get(attemptKey) || 0);
+  if (attempts >= 8) return { ok: false, msg: 'Too many attempts. Wait five minutes and try again.' };
+  cache.put(attemptKey, String(attempts + 1), 300);
+  var sec = getSection(key), rec = sec && (sec.records || {})[normalizedId(sid)];
+  if (!rec || !sameSecret(rec.codeHash, digestHex(normalizedAccess(access)))) return denied;
+  cache.remove(attemptKey);
+  var clean = JSON.parse(JSON.stringify(rec)); delete clean.codeHash;
+  return { ok: true, section: sec.name, warnAt: sec.warnAt, limit: sec.limit, me: clean };
 }
 
 /* ------------------------- routing ------------------------- */
@@ -168,8 +219,6 @@ function doGet(e) {
   try {
     if (q.page === 'checkin') return page(checkinPage(q.s || ''), 'Check in');
     if (q.page === 'me') return page(mePage(q.s || ''), 'Student records');
-    if (q.action === 'status') return json(getLive(q.s || ''));
-    if (q.action === 'checkins') return json(listCheckins({ token: q.token, key: q.s, date: q.date }));
     return page('<div class="w"><h1>Class Register</h1><p class="sub">Nothing to see here. Use the link your instructor gave you.</p></div>', 'Class Register');
   } catch (err) {
     return json({ ok: false, msg: String(err.message || err) });
@@ -183,8 +232,8 @@ function doPost(e) {
     if (d.action === 'open') return json(openSession(d));
     if (d.action === 'close') return json(closeSession(d));
     if (d.action === 'checkins') return json(listCheckins(d));
-    if (d.action === 'checkin') return json(doCheckin(d.key, d.sid, d.code));
-    if (d.action === 'me') return json(myRecord(d.key, d.sid));
+    if (d.action === 'checkin') return json(doCheckin(d.key, d.sid, d.code, d.access));
+    if (d.action === 'me') return json(myRecord(d.key, d.sid, d.access));
     return json({ ok: false, msg: 'Unknown action.' });
   } catch (err) {
     return json({ ok: false, msg: String(err.message || err) });
@@ -222,7 +271,8 @@ function checkinPage(key) {
   if (!live.open) return head + '<div class="msg bad">Check-in is closed right now.</div></div>';
   var codeBox = live.code ? '<input id="code" inputmode="numeric" placeholder="Class code">' : '';
   return head +
-    '<input id="sid" inputmode="numeric" placeholder="Student ID" autocomplete="off">' + codeBox +
+    '<input id="sid" inputmode="numeric" placeholder="Student ID" autocomplete="off">' +
+    '<input id="access" type="password" placeholder="Private access code" autocomplete="one-time-code">' + codeBox +
     '<button id="go">Check in</button><div id="out"></div>' +
     '<script>' +
     'var b=document.getElementById("go");' +
@@ -231,14 +281,32 @@ function checkinPage(key) {
     'b.onclick=function(){b.disabled=true;b.textContent="Sending…";' +
     ' var c=document.getElementById("code");' +
     ' google.script.run.withSuccessHandler(done).withFailureHandler(function(e){done({ok:false,msg:"Network problem, try again."});})' +
-    '  .doCheckin("' + key + '",document.getElementById("sid").value,c?c.value:"");};' +
+    '  .doCheckin("' + key + '",document.getElementById("sid").value,c?c.value:"",document.getElementById("access").value);};' +
     'document.getElementById("sid").addEventListener("keydown",function(e){if(e.key==="Enter")b.click();});' +
     '<\/script></div>';
 }
 function mePage(key) {
-  return '<div class="w"><h1>Student records stay private</h1>' +
-    '<p class="sub">This service is used only for class check-in. Ask your instructor for your individual attendance or grade report.</p>' +
-    '<div class="msg good">No scores or e-mail addresses are published here.</div></div>';
+  return '<div class="w"><h1>My private class record</h1><p class="sub">Enter the student ID and private access code supplied by your instructor. Only the matching student record is returned.</p>' +
+    '<input id="sid" inputmode="numeric" placeholder="Student ID" autocomplete="off">' +
+    '<input id="access" type="password" placeholder="Private access code" autocomplete="one-time-code">' +
+    '<button id="go">Show my record</button><div id="out"></div>' +
+    '<script>' +
+    'function esc(s){return String(s==null?"":s).replace(/[&<>\"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;"}[c];});}' +
+    'function n(v,s){return v==null?"\\u2014":(Math.round(Number(v)*(s?100:10))/(s?100:10)).toString();}' +
+    'var b=document.getElementById("go");' +
+    'function show(d){b.disabled=false;b.textContent="Show my record";var o=document.getElementById("out");' +
+    ' if(!d.ok){o.innerHTML=\'<div class="msg bad">\'+esc(d.msg)+\'</div>\';return;}' +
+    ' var p=d.me,a=p.attendance||{},h=\'<h3>\'+esc(p.name)+\'</h3><p class="sub">\'+esc(d.section)+\' · \'+esc(p.sid)+\'</p><div class="stats">\';' +
+    ' h+=\'<div class="stat"><b>\'+(a.pct==null?"\\u2014":n(a.pct)+"%")+\'</b><span>attendance</span></div>\';' +
+    ' h+=\'<div class="stat"><b>\'+n(a.absent)+\'</b><span>absences</span></div><div class="stat"><b>\'+n(a.late)+\'</b><span>late</span></div><div class="stat"><b>\'+n(a.held)+\'</b><span>sessions</span></div></div>\';' +
+    ' if(d.limit!=null&&a.absent>=d.limit)h+=\'<div class="msg bad">You have reached the course absence limit.</div>\';else if(d.warnAt!=null&&a.absent>=d.warnAt)h+=\'<div class="msg bad">Attendance warning: please contact your instructor.</div>\';' +
+    ' if(p.scores&&p.scores.length){h+=\'<h3>My scores</h3><table><thead><tr><th>Assessment</th><th class="n">Score</th><th class="n">Out of</th></tr></thead><tbody>\';' +
+    '  p.scores.forEach(function(x){h+=\'<tr><td>\'+esc(x.name)+\'</td><td class="n"><b>\'+n(x.score,1)+\'</b></td><td class="n">\'+n(x.max,1)+\'</td></tr>\';});' +
+    '  h+=\'<tr class="tot"><td>Total</td><td class="n">\'+(p.total==null?"\\u2014":n(p.total)+"%")+\'</td><td class="n">100</td></tr></tbody></table>\';}' +
+    ' o.innerHTML=h;}' +
+    'b.onclick=function(){b.disabled=true;b.textContent="Verifying…";google.script.run.withSuccessHandler(show).withFailureHandler(function(){show({ok:false,msg:"Network problem, try again."});}).myRecord("' + key + '",document.getElementById("sid").value,document.getElementById("access").value);};' +
+    'document.getElementById("access").addEventListener("keydown",function(e){if(e.key==="Enter")b.click();});' +
+    '<\/script></div>';
 }
 function esc_(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {

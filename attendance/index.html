@@ -190,6 +190,17 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
 .privacy-note{display:flex;gap:9px;align-items:flex-start;color:var(--ink-2);font-size:12px;margin-top:12px}
 .privacy-note b{color:var(--present);font-family:var(--mono)}
 
+/* instructor privacy lock */
+#privacyLock{position:fixed;inset:0;z-index:200;background:linear-gradient(145deg,#062f36,#0b5862);display:none;align-items:center;justify-content:center;padding:20px}
+#privacyLock.on{display:flex}
+.lock-card{width:min(440px,100%);background:#fff;border-radius:12px;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+.lock-card h1{font-family:var(--display);font-size:25px;margin:0 0 5px}
+.lock-card p{color:var(--ink-2);font-size:13px;margin:0 0 16px}
+.lock-card input{width:100%;margin-bottom:9px;font-size:17px;padding:11px}
+.lock-card .shield{font-family:var(--mono);font-size:11px;letter-spacing:.13em;color:var(--present);margin-bottom:9px}
+#lockMsg{min-height:20px;margin-top:9px;font-size:13px;color:var(--absent)}
+body.register-locked header.app,body.register-locked main{visibility:hidden}
+
 @media print{
   header.app,nav.tabs,.noprint{display:none!important}
   body{background:#fff}
@@ -216,6 +227,7 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
   <div class="bar">
     <div class="brand"><a href="#" onclick="go('dashboard');return false">Smart Class Register</a><small>attendance &middot; scores &middot; QR check-in</small></div>
     <a class="home-link" href="https://othman-echi.github.io/">Othman Echi &middot; homepage</a>
+    <button id="lockNow" class="btn sm quiet" type="button" onclick="lockRegister()" style="display:none">Lock</button>
     <div class="sec-pick">
       <label class="tag" for="secSel">Section</label>
       <select id="secSel" style="max-width:230px"></select>
@@ -225,6 +237,18 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
 </header>
 
 <main id="view"></main>
+
+<div id="privacyLock" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-card">
+    <div class="shield">PRIVATE INSTRUCTOR REGISTER</div>
+    <h1 id="lockTitle">Unlock the register</h1>
+    <p id="lockIntro">Enter the instructor PIN. Student scores and attendance remain hidden until the register is unlocked.</p>
+    <input id="lockPin" type="password" autocomplete="current-password" placeholder="Instructor PIN">
+    <input id="lockConfirm" type="password" autocomplete="new-password" placeholder="Confirm instructor PIN" style="display:none">
+    <button id="lockAction" class="btn" type="button" onclick="submitRegisterLock()">Unlock</button>
+    <div id="lockMsg" role="status"></div>
+  </div>
+</div>
 
 <div id="kiosk">
   <div id="kioskCount"></div>
@@ -245,7 +269,7 @@ td.num,th.num{text-align:right;font-family:var(--mono)}
 "use strict";
 /* ============================ storage ============================ */
 var KEY="class-register-v1", storageOK=true;
-function blank(){return{v:2,activeId:null,settings:{absenceLimit:6,warnAt:4,pin:"",url:"",token:""},sections:[]};}
+function blank(){return{v:3,activeId:null,settings:{absenceLimit:6,warnAt:4,pin:"",url:"",token:"",lockSalt:"",lockHash:"",lockMinutes:10},sections:[]};}
 var DB=blank();
 function load(){
   try{var raw=localStorage.getItem(KEY);if(raw)DB=Object.assign(blank(),JSON.parse(raw));}
@@ -257,8 +281,89 @@ function save(){
   catch(e){storageOK=false;}
 }
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function makeAccessCode(){
+  var alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",out="",a=new Uint32Array(16);
+  if(window.crypto&&window.crypto.getRandomValues)window.crypto.getRandomValues(a);
+  else for(var i=0;i<a.length;i++)a[i]=Math.floor(Math.random()*0xFFFFFFFF);
+  for(var j=0;j<a.length;j++)out+=alphabet[a[j]%alphabet.length];
+  return out.slice(0,4)+"-"+out.slice(4,8)+"-"+out.slice(8,12)+"-"+out.slice(12,16);
+}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("on");},1900);}
+
+/* ============================ instructor lock ============================ */
+var registerUnlocked=false,registerLockMode="unlock",lastPrivateActivity=Date.now();
+function bytesToB64(bytes){var s="";for(var i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);return btoa(s);}
+function b64ToBytes(s){var raw=atob(s),out=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
+function newLockSalt(){var a=new Uint8Array(18);window.crypto.getRandomValues(a);return bytesToB64(a);}
+async function deriveInstructorPin(pin,salt){
+  if(!window.crypto||!window.crypto.subtle)throw new Error("Secure PIN protection is not available in this browser.");
+  var key=await window.crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
+  var bits=await window.crypto.subtle.deriveBits({name:"PBKDF2",salt:b64ToBytes(salt),iterations:210000,hash:"SHA-256"},key,256);
+  return bytesToB64(new Uint8Array(bits));
+}
+function sameText(a,b){a=String(a||"");b=String(b||"");if(a.length!==b.length)return false;var d=0;for(var i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;}
+function showRegisterLock(mode){
+  registerLockMode=mode||"unlock";registerUnlocked=false;document.body.classList.add("register-locked");
+  var setup=registerLockMode==="setup";
+  document.getElementById("lockTitle").textContent=setup?"Protect the instructor register":"Unlock the register";
+  document.getElementById("lockIntro").textContent=setup?"Create an instructor PIN of at least 8 characters. It will be required whenever this page is opened and after inactivity.":"Enter the instructor PIN. Student scores and attendance remain hidden until the register is unlocked.";
+  document.getElementById("lockPin").value="";document.getElementById("lockPin").placeholder=setup?"Create instructor PIN":"Instructor PIN";
+  document.getElementById("lockPin").setAttribute("autocomplete",setup?"new-password":"current-password");
+  document.getElementById("lockConfirm").value="";document.getElementById("lockConfirm").style.display=setup?"":"none";
+  document.getElementById("lockAction").textContent=setup?"Protect this register":"Unlock";
+  document.getElementById("lockMsg").textContent="";document.getElementById("privacyLock").classList.add("on");
+  document.getElementById("lockNow").style.display="none";setTimeout(function(){document.getElementById("lockPin").focus();},40);
+}
+function hideRegisterLock(){
+  registerUnlocked=true;lastPrivateActivity=Date.now();document.body.classList.remove("register-locked");document.getElementById("privacyLock").classList.remove("on");
+  document.getElementById("lockNow").style.display="";save();render();
+}
+async function submitRegisterLock(){
+  var pin=document.getElementById("lockPin").value,msg=document.getElementById("lockMsg"),btn=document.getElementById("lockAction");
+  if(registerLockMode==="setup"){
+    var confirmPin=document.getElementById("lockConfirm").value;
+    if(pin.length<8){msg.textContent="Use at least 8 characters.";return;}
+    if(pin!==confirmPin){msg.textContent="The two PIN entries do not match.";return;}
+    btn.disabled=true;btn.textContent="Protecting…";
+    try{var salt=newLockSalt();DB.settings.lockSalt=salt;DB.settings.lockHash=await deriveInstructorPin(pin,salt);save();hideRegisterLock();toast("Instructor lock enabled");}
+    catch(e){msg.textContent=e.message||"Could not protect the register.";}
+    btn.disabled=false;btn.textContent="Protect this register";return;
+  }
+  btn.disabled=true;btn.textContent="Verifying…";
+  try{var hash=await deriveInstructorPin(pin,DB.settings.lockSalt);if(!sameText(hash,DB.settings.lockHash)){msg.textContent="Incorrect instructor PIN.";return;}hideRegisterLock();}
+  catch(e){msg.textContent=e.message||"Could not unlock the register.";}
+  finally{btn.disabled=false;btn.textContent="Unlock";}
+}
+function lockRegister(){
+  if(typeof stopCameraScan==="function")stopCameraScan();
+  document.getElementById("view").innerHTML="";document.getElementById("secSel").innerHTML='<option>— locked —</option>';
+  showRegisterLock(DB.settings.lockHash?"unlock":"setup");
+}
+function initRegisterLock(){showRegisterLock(DB.settings.lockHash?"unlock":"setup");}
+function privateActivity(){if(registerUnlocked)lastPrivateActivity=Date.now();}
+["pointerdown","keydown","touchstart"].forEach(function(e){document.addEventListener(e,privateActivity,{passive:true});});
+setInterval(function(){if(registerUnlocked&&Date.now()-lastPrivateActivity>(Number(DB.settings.lockMinutes)||10)*60000)lockRegister();},30000);
+document.getElementById("lockPin").addEventListener("keydown",function(e){if(e.key==="Enter")submitRegisterLock();});
+document.getElementById("lockConfirm").addEventListener("keydown",function(e){if(e.key==="Enter")submitRegisterLock();});
+
+function changeInstructorPin(){
+  openSheet('<h2>Change instructor PIN</h2><p class="hint">The PIN protects this browser copy of the register. Use at least 8 characters.</p>'
+    +'<input id="oldLockPin" type="password" autocomplete="current-password" placeholder="Current PIN" style="width:100%;margin-bottom:8px">'
+    +'<input id="newLockPin" type="password" autocomplete="new-password" placeholder="New PIN" style="width:100%;margin-bottom:8px">'
+    +'<input id="newLockConfirm" type="password" autocomplete="new-password" placeholder="Confirm new PIN" style="width:100%">'
+    +'<div id="changeLockMsg" class="hint" style="margin-top:8px;color:var(--absent)"></div>'
+    +'<div class="row" style="margin-top:12px"><button id="changeLockBtn" class="btn" onclick="saveChangedInstructorPin()">Change PIN</button><button class="btn quiet" onclick="closeSheet()">Cancel</button></div>');
+}
+async function saveChangedInstructorPin(){
+  var oldPin=document.getElementById("oldLockPin").value,newPin=document.getElementById("newLockPin").value,confirmPin=document.getElementById("newLockConfirm").value;
+  var msg=document.getElementById("changeLockMsg"),btn=document.getElementById("changeLockBtn");
+  if(newPin.length<8){msg.textContent="Use at least 8 characters.";return;}if(newPin!==confirmPin){msg.textContent="The new PIN entries do not match.";return;}
+  btn.disabled=true;
+  try{var oldHash=await deriveInstructorPin(oldPin,DB.settings.lockSalt);if(!sameText(oldHash,DB.settings.lockHash)){msg.textContent="The current PIN is incorrect.";return;}
+    var salt=newLockSalt();DB.settings.lockSalt=salt;DB.settings.lockHash=await deriveInstructorPin(newPin,salt);save();closeSheet();toast("Instructor PIN changed");}
+  catch(e){msg.textContent=e.message||"Could not change the PIN.";}finally{btn.disabled=false;}
+}
 
 /* ============================ helpers ============================ */
 function sec(){return DB.sections.filter(function(s){return s.id===DB.activeId;})[0]||null;}
@@ -297,9 +402,13 @@ function weightedTotal(s,sid){
   return den?Math.round(num/den*1000)/10:null;
 }
 function migrate(){
+  DB.v=3;
+  if(!DB.settings)DB.settings=blank().settings;
+  ["lockSalt","lockHash"].forEach(function(k){if(typeof DB.settings[k]!=="string")DB.settings[k]="";});
+  if(!DB.settings.lockMinutes)DB.settings.lockMinutes=10;
   DB.sections.forEach(function(s){
     if(typeof s.formula!=="string")s.formula="";
-    s.students.forEach(function(st){if(typeof st.email!=="string")st.email="";});
+    s.students.forEach(function(st){if(typeof st.email!=="string")st.email="";if(typeof st.access!=="string"||!st.access)st.access=makeAccessCode();});
     s.assessments.forEach(function(a){
       if(a.kind)return;
       var n=(a.name||"").toLowerCase();
@@ -337,7 +446,7 @@ function parseRoster(text){
     if(!id)id="TMP"+(out.length+1);
     if(seen[id])return;
     seen[id]=1;
-    out.push({sid:id,name:name||id,email:email});
+    out.push({sid:id,name:name||id,email:email,access:makeAccessCode()});
   });
   return out;
 }
@@ -466,6 +575,9 @@ function viewSections(){
    +'<div class="row"><label class="tag">Warn at</label><input type="number" min="1" style="width:80px" value="'+DB.settings.warnAt+'" onchange="DB.settings.warnAt=+this.value||4;save()">'
    +'<label class="tag" style="margin-left:10px">Limit</label><input type="number" min="1" style="width:80px" value="'+DB.settings.absenceLimit+'" onchange="DB.settings.absenceLimit=+this.value||6;save()">'
    +'<label class="tag" style="margin-left:10px">Exit-kiosk PIN (optional)</label><input type="text" style="width:110px" class="mono" value="'+esc(DB.settings.pin)+'" onchange="DB.settings.pin=this.value.trim();save()"></div></div>';
+  h+='<div class="card"><h2>Instructor privacy lock</h2><p class="hint">The register locks when the page opens and after inactivity. Scores and attendance are removed from the visible page while locked.</p>'
+   +'<div class="row"><label class="tag">Auto-lock after</label><input type="number" min="1" max="120" style="width:80px" value="'+DB.settings.lockMinutes+'" onchange="DB.settings.lockMinutes=Math.max(1,Math.min(120,+this.value||10));save()"><span class="hint" style="margin:0">minutes</span>'
+   +'<button class="btn quiet" onclick="changeInstructorPin()">Change instructor PIN</button><button class="btn" onclick="lockRegister()">Lock now</button></div></div>';
   return h;
 }
 function addSection(){
@@ -498,6 +610,7 @@ function viewRoster(){
    +'<input type="file" id="csvFile" accept=".csv,.txt" style="display:none" onchange="importCSV(this)">'
    +'<button class="btn quiet" onclick="addOne()">Add one student</button>'
    +'<button class="btn quiet" onclick="exportRoster()">Export roster CSV</button>'
+   +'<button class="btn quiet" onclick="exportAccessCodes()">Export private access codes</button>'
    +'<button class="btn quiet" onclick="copyEmails()">Copy e-mails</button></div></div>';
   if(!s.students.length)return h+'<div class="empty"><strong>No students yet</strong>Paste your list above — the app separates IDs from names automatically.</div>';
   h+='<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">'+s.students.length+' students</h2>'
@@ -508,17 +621,17 @@ function viewRoster(){
       +'<td><input type="text" dir="auto" value="'+esc(st.name)+'" style="width:100%;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'name\',this.value)"></td>'
       +'<td><input type="text" class="mono" value="'+esc(st.sid)+'" style="width:130px;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'sid\',this.value)"></td>'
       +'<td><input type="email" dir="ltr" value="'+esc(st.email||"")+'" placeholder="—" style="width:210px;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'email\',this.value)"></td>'
-      +'<td style="text-align:right"><button class="btn sm danger" onclick="delStudent('+i+')">Remove</button></td></tr>';
+      +'<td style="text-align:right;white-space:nowrap"><button class="btn sm quiet" onclick="showStudentAccess(\''+st.sid+'\')">Private code</button> <button class="btn sm danger" onclick="delStudent('+i+')">Remove</button></td></tr>';
   });
   h+='</tbody></table></div><p class="hint" style="margin-top:8px">Click a name, ID or e-mail to correct it. Leave the e-mail blank if you don\'t have it.</p></div>';
   return h;
 }
 function mergeStudents(list){
   var s=sec(),have={};
-  s.students.forEach(function(x){if(typeof x.email!=="string")x.email="";have[x.sid]=x;});
+  s.students.forEach(function(x){if(typeof x.email!=="string")x.email="";if(!x.access)x.access=makeAccessCode();have[x.sid]=x;});
   var added=0,dup=0,filled=0;
   list.forEach(function(x){
-    if(typeof x.email!=="string")x.email="";
+    if(typeof x.email!=="string")x.email="";if(!x.access)x.access=makeAccessCode();
     if(have[x.sid]){dup++;if(x.email&&!have[x.sid].email){have[x.sid].email=x.email;filled++;}return;}
     have[x.sid]=x;s.students.push(x);added++;
   });
@@ -555,7 +668,7 @@ function saveOne(){
   var n=document.getElementById("oneName").value.trim(),i=document.getElementById("oneId").value.trim();
   var m=(document.getElementById("oneMail").value||"").trim();
   if(!n||!i){toast("Name and ID are both needed");return;}
-  closeSheet();mergeStudents([{sid:i,name:n,email:m}]);
+  closeSheet();mergeStudents([{sid:i,name:n,email:m,access:makeAccessCode()}]);
 }
 function editStudent(i,f,v){
   var s=sec();v=v.trim();
@@ -587,6 +700,35 @@ function exportRoster(){
   var s=sec(),rows=[["ID","Name","E-mail"]];
   s.students.forEach(function(st){rows.push([st.sid,st.name,st.email||""]);});
   downloadCSV(slug(s.name)+"-roster.csv",rows);
+}
+function exportAccessCodes(){
+  var s=sec(),link=studentLink("me"),rows=[["ID","Name","Private access code","Private record link"]];
+  s.students.forEach(function(st){if(!st.access)st.access=makeAccessCode();rows.push([st.sid,st.name,st.access,link]);});
+  save();downloadCSV(slug(s.name)+"-PRIVATE-access-codes.csv",rows);
+  toast("Private codes exported — distribute each row only to that student");
+}
+function showStudentAccess(sid){
+  var s=sec(),st=s.students.filter(function(x){return x.sid===sid;})[0];if(!st)return;
+  if(!st.access){st.access=makeAccessCode();save();}
+  var link=studentLink("me");
+  openSheet('<h2>Private student access</h2><p class="hint" dir="auto">'+esc(st.name)+' · <span class="mono">'+esc(st.sid)+'</span></p>'
+    +'<div class="tag">Personal access code</div><div class="mono" style="font-size:24px;letter-spacing:.08em;margin:5px 0 13px">'+esc(st.access)+'</div>'
+    +(link?'<div class="tag">Private record link</div><div class="link-box">'+esc(link)+'</div>':'<div class="banner">Configure the QR check-in web app to create the private record link.</div>')
+    +'<p class="privacy-note"><b>PRIVATE</b><span>Give this code only to this student. It opens only this student\'s own record. Publish the section again after regenerating a code.</span></p>'
+    +'<div class="row" style="margin-top:12px"><button class="btn" onclick="copyText(\''+esc(st.access)+'\')">Copy code</button>'
+    +(st.email?'<button class="btn ghost" onclick="prepareAccessMail(\''+st.sid+'\')">Prepare private e-mail</button>':'')
+    +'<button class="btn danger" onclick="regenerateAccess(\''+st.sid+'\')">Regenerate code</button></div>');
+}
+function regenerateAccess(sid){
+  var s=sec(),st=s.students.filter(function(x){return x.sid===sid;})[0];if(!st)return;
+  if(!confirm("Regenerate the private code for "+st.name+"? The old code will stop working after you publish the section again."))return;
+  st.access=makeAccessCode();save();showStudentAccess(sid);toast("New private code created — publish the section again");
+}
+function prepareAccessMail(sid){
+  var s=sec(),st=s.students.filter(function(x){return x.sid===sid;})[0];if(!st||!st.email)return;
+  var link=studentLink("me"),subject="Your private class-record access — "+s.name;
+  var body="Dear "+st.name+",\n\nUse the link and personal access code below to view only your own attendance and scores for "+s.name+".\n\nLink: "+link+"\nStudent ID: "+st.sid+"\nPrivate access code: "+st.access+"\n\nDo not share this code.\n\nRegards,\nOthman Echi";
+  window.location.href="mailto:"+encodeURIComponent(st.email)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
 }
 function copyEmails(){
   var s=sec(),list=s.students.map(function(st){return(st.email||"").trim();}).filter(Boolean);
@@ -1141,8 +1283,8 @@ function viewReports(){
    +'<div class="row noprint"><button class="btn quiet" onclick="exportAttendance()">Export attendance CSV</button>'
    +'<button class="btn quiet" onclick="exportSummary()">Export summary CSV</button>'
    +'<button class="btn quiet" onclick="window.print()">Print this page</button>'
-   +'<button class="btn ghost" onclick="exportPortal()">Export student portal</button>'
-   +'<button class="btn ghost" onclick="exportPerStudent()">Export one file per student</button></div></div>';
+   +'<button class="btn ghost" onclick="go(\'live\')">Open private student portal</button></div>'
+   +'<p class="privacy-note"><b>PRIVATE</b><span>CSV and printed reports contain confidential class data. Store them securely and never send a class-wide file to students. Use the code-protected private portal for student access.</span></p></div>';
 
   if(flagged.length){
     h+='<div class="card"><h2>Absence warnings</h2><p class="hint">Warning at '+DB.settings.warnAt+' absences, limit at '+DB.settings.absenceLimit+'. “Prepare e-mail” opens a personalised draft in your mail app; you review it before sending.</p><table><thead><tr><th>Student</th><th>ID</th><th class="num">Absences</th><th class="num">Attendance</th><th>E-mail</th><th></th></tr></thead><tbody>';
@@ -1485,8 +1627,16 @@ function post(body){
     });
 }
 function livePayload(){
-  var s=sec();
-  return{name:s.name,students:s.students.map(function(st){return{sid:st.sid,name:st.name};})};
+  var s=sec(),records={};
+  s.students.forEach(function(st){
+    if(!st.access)st.access=makeAccessCode();
+    records[String(st.sid).toLowerCase()]={name:st.name,sid:st.sid,access:st.access,attendance:attStats(s,st.sid),
+      scores:s.assessments.map(function(a){var v=a.scores[st.sid];return{name:a.name,kind:a.kind||"quiz",max:a.max,score:(v==null||v==="")?null:Number(v)};}),
+      total:weightedTotal(s,st.sid)};
+  });
+  save();
+  return{name:s.name,students:s.students.map(function(st){return{sid:st.sid,name:st.name};}),records:records,
+    warnAt:DB.settings.warnAt,limit:DB.settings.absenceLimit};
 }
 function localCard(){
   return '<div class="card"><h2>Offline check-in &mdash; classroom network</h2>'
@@ -1536,7 +1686,7 @@ function viewLive(){
   if(!s.students.length)
     return h+'<div class="empty"><strong>Add students first</strong>There is nothing to publish yet.</div>';
 
-  h+='<div class="card"><h2>1 &middot; Publish '+esc(s.name)+'</h2><p class="hint">Sends only student IDs and names to your private check-in spreadsheet. Scores, e-mail addresses and attendance history remain in this browser.</p>'
+  h+='<div class="card"><h2>1 &middot; Publish '+esc(s.name)+'</h2><p class="hint">Sends the roster and private student records to your Google Apps Script spreadsheet. Personal access codes are converted to one-way hashes on the server; e-mail addresses are never uploaded.</p>'
    +'<button class="btn" onclick="doPublish(this)">Publish this section</button>'
    +'<span id="pubMsg" class="hint" style="margin-left:10px"></span></div>';
 
@@ -1550,17 +1700,16 @@ function viewLive(){
    +'<div class="row" style="margin-top:12px"><span class="tag" style="width:70px">Check-in link</span>'
    +'<input type="text" class="grow mono" style="font-size:12px" readonly value="'+esc(studentLink("checkin"))+'" onclick="this.select()">'
    +'<button class="btn sm quiet" onclick="copyText(\''+esc(studentLink("checkin"))+'\')">Copy</button></div>'
-   +'<p class="privacy-note"><b>PRIVATE</b><span>The QR check-in never contains your instructor token, scores or e-mail addresses. Use the Reports tab to print or export individual grade records.</span></p></div>';
+   +'<div class="row" style="margin-top:6px"><span class="tag" style="width:70px">Record link</span>'
+   +'<input type="text" class="grow mono" style="font-size:12px" readonly value="'+esc(studentLink("me"))+'" onclick="this.select()">'
+   +'<button class="btn sm quiet" onclick="copyText(\''+esc(studentLink("me"))+'\')">Copy</button></div>'
+   +'<p class="privacy-note"><b>PRIVATE</b><span>The check-in link contains no instructor token. The record link reveals nothing until a registered student enters the matching ID and private access code; only that student\'s record is returned.</span></p></div>';
 
   h+='<div class="card"><h2>3 &middot; Pull the check-ins</h2><p class="hint">Marks every student who checked in as present in that day\'s session here. Nobody is set to absent — you keep that decision.</p>'
    +'<div class="row"><input type="date" id="pullDate" value="'+todayISO()+'">'
    +'<button class="btn" onclick="doPull(this)">Pull check-ins</button>'
    +'<span id="pullMsg" class="hint" style="margin-left:6px"></span></div>'
-   +'<h3 class="sub">If your browser blocks the connection</h3>'
-   +'<p class="hint">Open the list in a browser tab, copy everything you see, and paste it here instead.</p>'
-   +'<div class="row"><button class="btn sm quiet" onclick="openList()">Open list in browser</button></div>'
-   +'<textarea id="pasteJson" rows="3" style="margin-top:8px" placeholder="Paste the page contents here"></textarea>'
-   +'<button class="btn quiet" style="margin-top:6px" onclick="doPaste()">Merge pasted check-ins</button></div>';
+   +'<p class="privacy-note"><b>SECURE</b><span>The instructor token is sent only inside an HTTPS request body. It is never placed in a shareable link or browser-history URL.</span></p></div>';
   return h;
 }
 function msg(id,text,bad){
@@ -1615,23 +1764,6 @@ function doPull(btn){
     })
     .catch(function(e){btn.disabled=false;msg("pullMsg",e.message,true);});
 }
-function openList(){
-  var c=liveCfg();
-  var d=document.getElementById("pullDate").value||todayISO();
-  var u=c.url+(c.url.indexOf("?")>=0?"&":"?")+"action=checkins&token="+encodeURIComponent(c.token)+"&s="+encodeURIComponent(secKey())+"&date="+d;
-  window.open(u,"_blank");
-}
-function doPaste(){
-  var t=document.getElementById("pasteJson").value.trim();
-  if(!t){toast("Paste the page contents first");return;}
-  var r;
-  try{r=JSON.parse(t);}catch(e){toast("That is not the check-in list");return;}
-  var list=r.checkins||r;
-  if(!list||!list.length){toast("No check-ins in that text");return;}
-  var d=r.date||document.getElementById("pullDate").value||todayISO();
-  var n=mergeCheckins(d,list);
-  msg("pullMsg",n.added+" marked present, "+n.skipped+" already recorded");
-}
 function mergeCheckins(date,list){
   var s=sec(),ses=s.sessions.filter(function(x){return x.date===date;})[0];
   if(!ses){ses={id:uid(),date:date,marks:{}};s.sessions.push(ses);}
@@ -1651,6 +1783,7 @@ function mergeCheckins(date,list){
 /* ---------- backup ---------- */
 function viewBackup(){
   return '<div class="card"><h2>Backup</h2><p class="hint">Your data lives in this browser only. Save a backup file regularly, and to move everything to another computer or phone, restore that file there.</p>'
+   +'<div class="banner"><b>Confidential:</b> a backup contains every roster, score, attendance record and private student access code. Keep it in encrypted storage and never share it with students.</div>'
    +'<div class="row"><button class="btn" onclick="exportAll()">Save backup file</button>'
    +'<button class="btn ghost" onclick="document.getElementById(\'bkFile\').click()">Restore from backup</button>'
    +'<input type="file" id="bkFile" accept=".json" style="display:none" onchange="importAll(this)"></div>'
@@ -1672,7 +1805,10 @@ function importAll(input){
       var d=JSON.parse(String(r.result));
       if(!d||!d.sections)throw 0;
       if(!confirm("Replace the data in this browser with the backup ("+d.sections.length+" section(s))?"))return;
-      DB=Object.assign(blank(),d);save();render();toast("Backup restored");
+      var currentLock={salt:DB.settings.lockSalt,hash:DB.settings.lockHash,minutes:DB.settings.lockMinutes};
+      DB=Object.assign(blank(),d);migrate();
+      DB.settings.lockSalt=currentLock.salt;DB.settings.lockHash=currentLock.hash;DB.settings.lockMinutes=currentLock.minutes;
+      save();lockRegister();
     }catch(e){toast("That file is not a Class Register backup");}
   };
   r.readAsText(f,"utf-8");
@@ -1681,14 +1817,16 @@ function importAll(input){
 function wipe(){
   if(!confirm("Erase everything? Save a backup first if you might need this data."))return;
   if(!confirm("Last check — erase all sections, rosters, attendance and scores?"))return;
-  DB=blank();save();go("sections");
+  var currentLock={salt:DB.settings.lockSalt,hash:DB.settings.lockHash,minutes:DB.settings.lockMinutes};
+  DB=blank();DB.settings.lockSalt=currentLock.salt;DB.settings.lockHash=currentLock.hash;DB.settings.lockMinutes=currentLock.minutes;
+  save();lockRegister();
 }
 
 /* ============================ start ============================ */
 load();
 if(DB.sections.length&&!sec())DB.activeId=DB.sections[0].id;
 tab="dashboard";
-render();
+initRegisterLock();
 </script>
 </body>
 </html>

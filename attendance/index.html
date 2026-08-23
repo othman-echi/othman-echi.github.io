@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Attendance &amp; Exam Register · Othman Echi</title>
+<meta name="description" content="A private, browser-based class register for attendance, exam scores, averages, alerts and QR check-in.">
+<meta name="theme-color" content="#0b4f57">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta property="og:title" content="Smart Attendance &amp; Exam Register">
+<meta property="og:description" content="Attendance, exam scores, averages, alerts and QR check-in in one instructor-owned register.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://othman-echi.github.io/attendance/">
+<meta property="og:image" content="https://othman-echi.github.io/attendance/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Smart Attendance &amp; Exam Register">
+<meta name="twitter:description" content="Attendance, exam scores, averages, alerts and QR check-in in one instructor-owned register.">
+<meta name="twitter:image" content="https://othman-echi.github.io/attendance/og.png">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root{
+  --bg:#E9EDF1; --surface:#FFFFFF; --surface-2:#F5F8FA;
+  --ink:#14212E; --ink-2:#4A5A6A; --ink-3:#8496A6;
+  --line:#D3DBE3; --line-strong:#B7C3CD;
+  --accent:#0F5A6E; --accent-soft:#E1EEF2;
+  --present:#1E7A4B; --late:#A96A00; --excused:#3E6B8C; --absent:#B02A28;
+  --present-bg:#E4F2EA; --late-bg:#F8EEDC; --excused-bg:#E6EDF4; --absent-bg:#F7E3E2;
+  --radius:8px;
+  --display:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--body);
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shell ---------- */
+header.app{
+  background:var(--surface); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:40;
+}
+.bar{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:20px;letter-spacing:-.02em;margin-right:auto}
+.brand a{color:inherit;text-decoration:none}
+.brand small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.home-link{color:var(--ink-2);font-size:13px;text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.home-link:hover{color:var(--accent);border-color:var(--accent)}
+.sec-pick{display:flex;gap:8px;align-items:center}
+select,input[type=text],input[type=date],input[type=number],input[type=password],textarea{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:6px;
+  padding:7px 9px; min-width:0;
+}
+textarea{width:100%;font-family:var(--mono);font-size:13px;line-height:1.5}
+nav.tabs{max-width:1180px;margin:0 auto;padding:0 8px;display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{
+  background:none;border:none;border-bottom:2px solid transparent;
+  padding:9px 12px;white-space:nowrap;color:var(--ink-2);font-size:14px;
+}
+nav.tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 80px}
+
+/* ---------- pieces ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h2{font-family:var(--display);font-size:17px;margin:0 0 4px;font-weight:600;letter-spacing:-.01em}
+.card p.hint{margin:0 0 12px;color:var(--ink-2);font-size:13px}
+h3.sub{font-family:var(--display);font-size:15px;margin:18px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 180px}
+.btn{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:6px;padding:8px 13px;font-size:14px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--surface);color:var(--accent)}
+.btn.quiet{background:var(--surface);color:var(--ink-2);border-color:var(--line-strong)}
+.btn.danger{background:var(--surface);color:var(--absent);border-color:#E2B6B4}
+.btn.sm{padding:5px 9px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.mono{font-family:var(--mono)}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px 18px;text-align:center;color:var(--ink-2)}
+.empty strong{display:block;font-family:var(--display);font-size:16px;color:var(--ink);margin-bottom:4px}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-family:var(--mono)}
+.pill.ok{background:var(--present-bg);color:var(--present)}
+.pill.warn{background:var(--late-bg);color:var(--late)}
+.pill.bad{background:var(--absent-bg);color:var(--absent)}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin:2px 0 10px}
+.stat{min-width:78px}
+.stat b{display:block;font-family:var(--mono);font-size:19px;font-weight:600}
+.stat span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:middle}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--surface-2)}
+tr:hover td{background:var(--surface-2)}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.scroll{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);max-height:70vh}
+.scroll table{border-collapse:separate;border-spacing:0}
+.scroll th,.scroll td{border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.scroll thead th{position:sticky;top:0;z-index:3;background:var(--surface-2)}
+.scroll .stick{position:sticky;left:0;background:var(--surface);z-index:2;min-width:190px}
+.scroll thead .stick{z-index:5}
+.scroll tr:hover .stick{background:var(--surface-2)}
+
+/* attendance marking */
+.mark-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.mark-row{display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.mark-row .who{flex:1;min-width:0}
+.mark-row .who b{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mark-row .who span{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.seg{display:flex;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;flex:none}
+.seg button{background:var(--surface);border:none;padding:6px 0;width:38px;font-family:var(--mono);font-size:13px;color:var(--ink-2);border-left:1px solid var(--line)}
+.seg button:first-child{border-left:none}
+.seg button[data-on=P]{background:var(--present);color:#fff}
+.seg button[data-on=L]{background:var(--late);color:#fff}
+.seg button[data-on=E]{background:var(--excused);color:#fff}
+.seg button[data-on=A]{background:var(--absent);color:#fff}
+
+/* ledger grid — the class overview */
+.cell{width:26px;height:26px;padding:0;text-align:center;font-family:var(--mono);font-size:11px}
+.cell i{display:block;width:100%;height:100%;line-height:26px;font-style:normal}
+.c-P{background:var(--present-bg);color:var(--present)}
+.c-A{background:var(--absent-bg);color:var(--absent)}
+.c-L{background:var(--late-bg);color:var(--late)}
+.c-E{background:var(--excused-bg);color:var(--excused)}
+.c-{background:var(--surface);color:var(--ink-3)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin:10px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+
+/* kiosk */
+#kiosk{position:fixed;inset:0;background:var(--accent);color:#fff;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+#kiosk.on{display:flex}
+#kiosk h2{font-family:var(--display);font-size:clamp(22px,5vw,34px);margin:0 0 6px;font-weight:500}
+#kiosk p{margin:0 0 22px;opacity:.8;font-size:14px}
+#kiosk input{font-family:var(--mono);font-size:clamp(24px,7vw,40px);text-align:center;letter-spacing:.12em;padding:14px;width:min(420px,90vw);border:none;border-radius:10px;background:#fff;color:var(--ink)}
+#kioskCamera{margin-top:12px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:7px;padding:8px 13px;font-size:13px}
+#kioskVideo{display:none;margin-top:13px;width:min(420px,90vw);max-height:240px;object-fit:cover;border:2px solid rgba(255,255,255,.7);border-radius:10px;background:#092f35}
+#kioskVideo.on{display:block}
+#kioskScanHint{font-family:var(--mono);font-size:11px;opacity:.78;margin-top:7px;min-height:16px}
+#kioskMsg{margin-top:22px;min-height:76px;font-size:clamp(17px,4vw,24px);font-family:var(--display)}
+#kioskMsg .sub{display:block;font-family:var(--mono);font-size:13px;opacity:.85;margin-top:6px;letter-spacing:.06em}
+#kioskCount{position:fixed;top:14px;left:16px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;opacity:.75}
+#kioskExit{position:fixed;top:10px;right:12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:6px 11px;font-size:13px}
+
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(20,33,46,.45);z-index:90;display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto}
+#modal.on{display:flex}
+.sheet{background:var(--surface);border-radius:10px;max-width:620px;width:100%;padding:20px;border:1px solid var(--line)}
+.sheet h2{font-family:var(--display);font-size:19px;margin:0 0 2px}
+.sheet .close{float:right;background:none;border:none;font-size:20px;color:var(--ink-3);line-height:1}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:14px;z-index:120;opacity:0;pointer-events:none;transition:opacity .18s}
+#toast.on{opacity:1}
+.banner{background:var(--late-bg);color:#6E4600;border:1px solid #E8CFA0;border-radius:var(--radius);padding:9px 12px;font-size:13px;margin-bottom:14px}
+
+/* dashboard */
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#083f47 0%,#0f6670 62%,#188091 100%);color:#fff;border:none;padding:clamp(22px,5vw,42px)}
+.hero:after{content:"";position:absolute;width:260px;height:260px;border:1px solid rgba(255,255,255,.16);border-radius:50%;right:-75px;top:-120px;box-shadow:0 0 0 44px rgba(255,255,255,.045),0 0 0 88px rgba(255,255,255,.025)}
+.hero>*{position:relative;z-index:1}
+.hero h1{font-family:var(--display);font-size:clamp(27px,5vw,44px);line-height:1.04;letter-spacing:-.035em;margin:8px 0 12px;max-width:760px;font-weight:500}
+.hero p{max-width:700px;margin:0 0 20px;color:rgba(255,255,255,.82);font-size:15px}
+.hero .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#9fe3e6}
+.hero .btn{background:#fff;color:#0b515a;border-color:#fff}
+.hero .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+.metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.metric-card b{display:block;font-family:var(--mono);font-size:24px;line-height:1.15;margin-bottom:5px}
+.metric-card span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.quick-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:17px;text-align:left;min-height:132px;display:flex;flex-direction:column;align-items:flex-start}
+.quick-card:hover{border-color:var(--accent);box-shadow:0 5px 20px rgba(15,90,110,.08)}
+.quick-card b{font-family:var(--display);font-size:17px;font-weight:600;margin:8px 0 4px}
+.quick-card span{font-size:13px;color:var(--ink-2)}
+.quick-icon{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--accent);background:var(--accent-soft);padding:4px 7px;border-radius:4px}
+.health{height:7px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:9px}
+.health i{display:block;height:100%;background:var(--present);border-radius:inherit}
+.alert-list{display:grid;gap:7px;margin-top:10px}
+.alert-item{display:flex;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:7px}
+.alert-item .who{flex:1;min-width:0}
+.alert-item .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qr-stage{display:grid;place-items:center;background:#f5f8fa;border:1px solid var(--line);border-radius:10px;padding:18px;margin:14px 0}
+.qr-stage #qrCanvas{background:#fff;border:10px solid #fff;border-radius:7px;min-width:220px;min-height:220px;display:grid;place-items:center}
+.qr-stage img,.qr-stage canvas{display:block;max-width:100%;height:auto}
+.link-box{font-family:var(--mono);font-size:11px;word-break:break-all;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.privacy-note{display:flex;gap:9px;align-items:flex-start;color:var(--ink-2);font-size:12px;margin-top:12px}
+.privacy-note b{color:var(--present);font-family:var(--mono)}
+
+@media print{
+  header.app,nav.tabs,.noprint{display:none!important}
+  body{background:#fff}
+  main{padding:0;max-width:none}
+  .card{border:none;padding:0}
+  .scroll{max-height:none;overflow:visible;border:none}
+}
+@media (max-width:640px){
+  .bar{padding:8px 12px;gap:8px}
+  main{padding:14px 10px 70px}
+  .card{padding:13px}
+  .mark-row{padding:6px 8px;gap:7px}
+  .seg button{width:34px}
+  .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metric-card:last-child{grid-column:1/-1}
+  .quick-grid{grid-template-columns:1fr}
+  .home-link{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="bar">
+    <div class="brand"><a href="#" onclick="go('dashboard');return false">Smart Class Register</a><small>attendance &middot; scores &middot; QR check-in</small></div>
+    <a class="home-link" href="https://othman-echi.github.io/">Othman Echi &middot; homepage</a>
+    <div class="sec-pick">
+      <label class="tag" for="secSel">Section</label>
+      <select id="secSel" style="max-width:230px"></select>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+</header>
+
+<main id="view"></main>
+
+<div id="kiosk">
+  <div id="kioskCount"></div>
+  <button id="kioskExit">Exit</button>
+  <h2 id="kioskTitle">Check in</h2>
+  <p id="kioskSub">Type your student ID, or scan an ID QR/barcode</p>
+  <input id="kioskInput" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Student ID">
+  <button id="kioskCamera" type="button">Use camera scanner</button>
+  <video id="kioskVideo" playsinline muted></video>
+  <div id="kioskScanHint">Camera scanning is optional and depends on browser support.</div>
+  <div id="kioskMsg"></div>
+</div>
+
+<div id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============================ storage ============================ */
+var KEY="class-register-v1", storageOK=true;
+function blank(){return{v:2,activeId:null,settings:{absenceLimit:6,warnAt:4,pin:"",url:"",token:""},sections:[]};}
+var DB=blank();
+function load(){
+  try{var raw=localStorage.getItem(KEY);if(raw)DB=Object.assign(blank(),JSON.parse(raw));}
+  catch(e){storageOK=false;}
+  migrate();
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(DB));}
+  catch(e){storageOK=false;}
+}
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("on");},1900);}
+
+/* ============================ helpers ============================ */
+function sec(){return DB.sections.filter(function(s){return s.id===DB.activeId;})[0]||null;}
+function todayISO(){var d=new Date(),p=function(n){return(n<10?"0":"")+n;};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function fmtDate(iso){if(!iso)return"";var p=iso.split("-");return p[2]+"/"+p[1];}
+function mean(a){return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null;}
+function median(a){if(!a.length)return null;var b=a.slice().sort(function(x,y){return x-y;}),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;}
+function stdev(a){if(a.length<2)return null;var m=mean(a);return Math.sqrt(a.reduce(function(s,x){return s+(x-m)*(x-m);},0)/(a.length-1));}
+function r1(n){return n==null?"—":(Math.round(n*10)/10).toString();}
+function r2(n){return n==null?"—":(Math.round(n*100)/100).toString();}
+
+function attStats(s,sid){
+  var held=s.sessions.length,p=0,a=0,l=0,e=0;
+  s.sessions.forEach(function(ses){
+    var m=ses.marks[sid]||"";
+    if(m==="P")p++;else if(m==="L")l++;else if(m==="E")e++;else if(m==="A")a++;
+  });
+  var counted=p+l+e+a;
+  var pct=counted?Math.round((p+l+e)/counted*1000)/10:null;
+  return{held:held,present:p,late:l,excused:e,absent:a,unmarked:held-counted,pct:pct};
+}
+function weightedTotal(s,sid){
+  if(s.formula&&s.formula.trim()){
+    try{
+      var v=evalFormula(s.formula,formulaEnv(s,sid));
+      return Math.round(v*100)/100;
+    }catch(e){return null;}
+  }
+  var num=0,den=0;
+  s.assessments.forEach(function(as){
+    var v=as.scores[sid];
+    if(v==null||v==="")return;
+    var w=Number(as.weight)||0;if(!w)return;
+    num+=(Number(v)/Number(as.max))*w;den+=w;
+  });
+  return den?Math.round(num/den*1000)/10:null;
+}
+function migrate(){
+  DB.sections.forEach(function(s){
+    if(typeof s.formula!=="string")s.formula="";
+    s.students.forEach(function(st){if(typeof st.email!=="string")st.email="";});
+    s.assessments.forEach(function(a){
+      if(a.kind)return;
+      var n=(a.name||"").toLowerCase();
+      if(/final|fex/.test(n))a.kind="final";
+      else if(/oral|oex|شفو/.test(n))a.kind="oral";
+      else if(/project|report|hw|homework|assign/.test(n))a.kind="project";
+      else if(/exam|midterm|major|test/.test(n))a.kind="exam";
+      else a.kind="quiz";
+    });
+  });
+}
+
+/* ============================ parsing ============================ */
+function parseRoster(text){
+  var out=[],seen={};
+  text.split(/\r?\n/).forEach(function(line){
+    line=line.replace(/^\uFEFF/,"").trim();
+    if(!line)return;
+    var email="",em=line.match(/[^\s,;<>()"]+@[^\s,;<>()"]+\.[A-Za-z]{2,}/);
+    if(em){email=em[0];line=line.replace(em[0],"").replace(/\s*[,;\t]\s*(?=[,;\t]|$)/,"").trim();}
+    var parts=line.split(/\t|,|;|\s{2,}/).map(function(x){return x.trim();}).filter(Boolean);
+    var id="",name="";
+    if(parts.length>=2){
+      var idIdx=-1;
+      for(var i=0;i<parts.length;i++){if(/^[A-Za-z]?\d{4,}$/.test(parts[i])){idIdx=i;break;}}
+      if(idIdx<0)idIdx=0;
+      id=parts[idIdx];
+      name=parts.filter(function(_,i){return i!==idIdx;}).join(" ").trim();
+    }else{
+      var m=line.match(/^([A-Za-z]?\d{4,})\s+(.+)$/)||line.match(/^(.+?)\s+([A-Za-z]?\d{4,})$/);
+      if(m){ if(/\d{4,}/.test(m[1])){id=m[1];name=m[2];}else{name=m[1];id=m[2];} }
+      else{name=line;}
+    }
+    if(/^(id|student\s*id|no\.?|s\.?n\.?)$/i.test(id)&&/^name/i.test(name))return;
+    if(!id)id="TMP"+(out.length+1);
+    if(seen[id])return;
+    seen[id]=1;
+    out.push({sid:id,name:name||id,email:email});
+  });
+  return out;
+}
+function csvCell(v){v=String(v==null?"":v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function downloadCSV(name,rows){
+  var body=rows.map(function(r){return r.map(csvCell).join(",");}).join("\r\n");
+  downloadFile(name,"\uFEFF"+body,"text/csv;charset=utf-8");
+}
+function downloadFile(name,content,type){
+  var b=new Blob([content],{type:type||"text/plain;charset=utf-8"});
+  var u=URL.createObjectURL(b),a=document.createElement("a");
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove();},400);
+}
+
+/* ============================ modal ============================ */
+function openSheet(html){
+  document.getElementById("sheet").innerHTML='<button class="close" onclick="closeSheet()" aria-label="Close">&times;</button>'+html;
+  document.getElementById("modal").classList.add("on");
+}
+function closeSheet(){document.getElementById("modal").classList.remove("on");}
+document.getElementById("modal").addEventListener("click",function(e){if(e.target.id==="modal")closeSheet();});
+
+/* ============================ tabs ============================ */
+var TABS=[["dashboard","Dashboard"],["sections","Sections"],["roster","Roster"],["attendance","Attendance"],["scores","Scores"],["reports","Reports"],["live","QR check-in"],["backup","Backup"]];
+var tab="sections";
+function drawTabs(){
+  document.getElementById("tabs").innerHTML=TABS.map(function(t){
+    return '<button role="tab" aria-selected="'+(tab===t[0])+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>';
+  }).join("");
+}
+function go(t){tab=t;render();window.scrollTo(0,0);}
+function drawSelect(){
+  var el=document.getElementById("secSel");
+  if(!DB.sections.length){el.innerHTML='<option>— no sections —</option>';return;}
+  el.innerHTML=DB.sections.map(function(s){
+    return '<option value="'+s.id+'"'+(s.id===DB.activeId?" selected":"")+'>'+esc(s.name)+" ("+s.students.length+")</option>";
+  }).join("");
+}
+document.getElementById("secSel").addEventListener("change",function(e){DB.activeId=e.target.value;save();render();});
+
+/* ============================ render ============================ */
+function render(){
+  drawTabs();drawSelect();
+  var v=document.getElementById("view"),h="";
+  if(!storageOK)h+='<div class="banner">This browser is not saving data automatically. Save the file to your computer and open it from there, and use <b>Backup</b> to keep a copy of your data.</div>';
+  if(tab==="dashboard")h+=viewDashboard();
+  else if(tab==="sections")h+=viewSections();
+  else if(!sec())h+='<div class="empty"><strong>No section selected</strong>Create a section first, then add its students.<div style="margin-top:12px"><button class="btn" onclick="go(\'sections\')">Go to Sections</button></div></div>';
+  else if(tab==="roster")h+=viewRoster();
+  else if(tab==="attendance")h+=viewAttendance();
+  else if(tab==="scores")h+=viewScores();
+  else if(tab==="reports")h+=viewReports();
+  else if(tab==="live")h+=viewLive();
+  else if(tab==="backup")h+=viewBackup();
+  v.innerHTML=h;
+}
+
+/* ---------- dashboard ---------- */
+function viewDashboard(){
+  var s=sec();
+  if(!s){
+    return '<section class="card hero"><span class="eyebrow">Instructor-owned · privacy first</span>'
+      +'<h1>Attendance, exams and timely warnings — in one calm register.</h1>'
+      +'<p>Create a section, add the roster, and start teaching. Mark attendance yourself or let students scan a session QR code; enter exam scores and the averages update automatically.</p>'
+      +'<div class="row"><button class="btn" onclick="go(\'sections\')">Create the first section</button>'
+      +'<a class="btn ghost" href="https://othman-echi.github.io/">Back to homepage</a></div></section>'
+      +'<div class="quick-grid"><div class="quick-card"><span class="quick-icon">01 · ROSTER</span><b>Add your students</b><span>Paste names, IDs and optional e-mail addresses, or import a CSV file.</span></div>'
+      +'<div class="quick-card"><span class="quick-icon">02 · ATTEND</span><b>Open each class</b><span>Mark P, L, E or A yourself, use kiosk mode, or open a QR check-in.</span></div>'
+      +'<div class="quick-card"><span class="quick-icon">03 · REVIEW</span><b>Act on the signals</b><span>Compute weighted results, review class averages and prepare attendance warnings.</span></div></div>'
+      +'<div class="card"><h2>Your records stay under your control</h2><p class="hint">The public page contains no roster or grades. Your working data stays in this browser unless you explicitly publish a section to your private check-in service. Save regular backups from the Backup tab.</p></div>';
+  }
+  var att=s.students.map(function(st){return attStats(s,st.sid).pct;}).filter(function(x){return x!=null;});
+  var totals=s.students.map(function(st){return weightedTotal(s,st.sid);}).filter(function(x){return x!=null;});
+  var flagged=s.students.filter(function(st){return attStats(s,st.sid).absent>=DB.settings.warnAt;})
+    .sort(function(a,b){return attStats(s,b.sid).absent-attStats(s,a.sid).absent;});
+  var today=s.sessions.filter(function(x){return x.date===todayISO();})[0]||null;
+  var marked=today?Object.keys(today.marks).length:0;
+  var attMean=mean(att),scoreMean=mean(totals);
+  var h='<section class="card hero"><span class="eyebrow">'+esc(todayISO())+' · '+esc(s.name)+'</span>'
+    +'<h1>'+(today?'Today\'s register is ready.':'Ready for today\'s class?')+'</h1>'
+    +'<p>'+(today?(marked+' of '+s.students.length+' students are marked for today. Continue the register or move to the next task.'):'Open today\'s session, then mark students manually or use the QR check-in workflow.')+'</p>'
+    +'<div class="row"><button class="btn" onclick="startToday()">'+(today?'Continue today\'s attendance':'Start today\'s attendance')+'</button>'
+    +'<button class="btn ghost" onclick="go(\'live\')">Open QR check-in</button></div></section>';
+  h+='<div class="metric-grid"><div class="metric-card"><b>'+s.students.length+'</b><span>Students</span></div>'
+    +'<div class="metric-card"><b>'+s.sessions.length+'</b><span>Sessions</span></div>'
+    +'<div class="metric-card"><b>'+(attMean==null?'—':r1(attMean)+'%')+'</b><span>Mean attendance</span></div>'
+    +'<div class="metric-card"><b>'+(scoreMean==null?'—':r1(scoreMean)+'%')+'</b><span>Mean score</span></div>'
+    +'<div class="metric-card"><b class="'+(flagged.length?'':'ok')+'">'+flagged.length+'</b><span>Warnings</span></div></div>';
+  h+='<div class="quick-grid"><button class="quick-card" onclick="startToday()"><span class="quick-icon">ATTENDANCE</span><b>Run the register</b><span>Open today, search the roster, mark P/L/E/A, or use scanner-friendly kiosk mode.</span></button>'
+    +'<button class="quick-card" onclick="go(\'scores\')"><span class="quick-icon">ASSESSMENTS</span><b>Enter exam scores</b><span>'+s.assessments.length+' assessment item'+(s.assessments.length===1?'':'s')+' · weighted totals and class statistics.</span></button>'
+    +'<button class="quick-card" onclick="go(\'reports\')"><span class="quick-icon">REPORTS</span><b>Review the class</b><span>Attendance ledger, student reports, exports and warning actions.</span></button></div>';
+  if(flagged.length){
+    h+='<div class="card"><div class="row" style="justify-content:space-between"><div><h2>Students needing attention</h2><p class="hint">Warning threshold: '+DB.settings.warnAt+' absences · limit: '+DB.settings.absenceLimit+'.</p></div><button class="btn sm quiet" onclick="go(\'reports\')">See all warnings</button></div><div class="alert-list">';
+    flagged.slice(0,4).forEach(function(st){var a=attStats(s,st.sid);h+='<div class="alert-item"><span class="pill '+(a.absent>=DB.settings.absenceLimit?'bad':'warn')+'">'+a.absent+' abs</span><div class="who"><b dir="auto">'+esc(st.name)+'</b><span class="mono">'+esc(st.sid)+' · '+(a.pct==null?'—':a.pct+'%')+'</span></div><button class="btn sm quiet" onclick="warningMail(\''+st.sid+'\')"'+(st.email?'':' disabled title="Add an e-mail address in Roster"')+'>Prepare e-mail</button></div>';});
+    h+='</div></div>';
+  }else{
+    h+='<div class="card"><h2>Attendance health</h2><p class="hint">No student has reached the warning threshold'+(s.sessions.length?'.':' yet — start recording sessions to see attendance signals here.')+'</p><div class="health"><i style="width:'+(attMean==null?0:Math.max(0,Math.min(100,attMean)))+'%"></i></div></div>';
+  }
+  return h;
+}
+function startToday(){
+  var s=sec();if(!s){go("sections");return;}
+  var d=todayISO(),ses=s.sessions.filter(function(x){return x.date===d;})[0];
+  if(!ses){ses={id:uid(),date:d,marks:{}};s.sessions.push(ses);save();}
+  openSession=ses.id;go("attendance");
+}
+
+/* ---------- sections ---------- */
+function viewSections(){
+  var h='<div class="card"><h2>Sections</h2><p class="hint">Each section keeps its own roster, sessions and scores.</p>'
+   +'<div class="row"><input type="text" id="newSec" class="grow" placeholder="e.g. MATH 102 — Section 05" onkeydown="if(event.key===\'Enter\')addSection()">'
+   +'<button class="btn" onclick="addSection()">Add section</button></div></div>';
+  if(!DB.sections.length)return h+'<div class="empty"><strong>Nothing here yet</strong>Add your first section above.</div>';
+  h+='<div class="card"><table><thead><tr><th>Section</th><th class="num">Students</th><th class="num">Sessions</th><th class="num">Items</th><th></th></tr></thead><tbody>';
+  DB.sections.forEach(function(s){
+    h+='<tr><td><b>'+esc(s.name)+'</b>'+(s.id===DB.activeId?' <span class="pill ok">active</span>':'')+'</td>'
+      +'<td class="num">'+s.students.length+'</td><td class="num">'+s.sessions.length+'</td><td class="num">'+s.assessments.length+'</td>'
+      +'<td style="text-align:right;white-space:nowrap">'
+      +'<button class="btn sm quiet" onclick="pick(\''+s.id+'\')">Open</button> '
+      +'<button class="btn sm quiet" onclick="renameSection(\''+s.id+'\')">Rename</button> '
+      +'<button class="btn sm danger" onclick="delSection(\''+s.id+'\')">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="card"><h2>Absence limit</h2><p class="hint">Students are flagged in Reports when they reach these numbers of absences.</p>'
+   +'<div class="row"><label class="tag">Warn at</label><input type="number" min="1" style="width:80px" value="'+DB.settings.warnAt+'" onchange="DB.settings.warnAt=+this.value||4;save()">'
+   +'<label class="tag" style="margin-left:10px">Limit</label><input type="number" min="1" style="width:80px" value="'+DB.settings.absenceLimit+'" onchange="DB.settings.absenceLimit=+this.value||6;save()">'
+   +'<label class="tag" style="margin-left:10px">Exit-kiosk PIN (optional)</label><input type="text" style="width:110px" class="mono" value="'+esc(DB.settings.pin)+'" onchange="DB.settings.pin=this.value.trim();save()"></div></div>';
+  return h;
+}
+function addSection(){
+  var el=document.getElementById("newSec"),n=el.value.trim();
+  if(!n){toast("Type a section name first");el.focus();return;}
+  var s={id:uid(),name:n,students:[],sessions:[],assessments:[]};
+  DB.sections.push(s);DB.activeId=s.id;save();go("roster");
+}
+function pick(id){DB.activeId=id;save();go("roster");}
+function renameSection(id){
+  var s=DB.sections.filter(function(x){return x.id===id;})[0];
+  var n=prompt("Section name",s.name);
+  if(n&&n.trim()){s.name=n.trim();save();render();}
+}
+function delSection(id){
+  var s=DB.sections.filter(function(x){return x.id===id;})[0];
+  if(!confirm('Delete "'+s.name+'" with its roster, attendance and scores? This cannot be undone.'))return;
+  DB.sections=DB.sections.filter(function(x){return x.id!==id;});
+  if(DB.activeId===id)DB.activeId=DB.sections.length?DB.sections[0].id:null;
+  save();render();
+}
+
+/* ---------- roster ---------- */
+function viewRoster(){
+  var s=sec();
+  var h='<div class="card"><h2>'+esc(s.name)+' — roster</h2><p class="hint">Paste a list, import a CSV file, or add students one by one. One line per student; ID, name and e-mail in any order, separated by comma, tab or spaces. The e-mail is optional and is recognised by its @.</p>'
+   +'<textarea id="paste" rows="5" placeholder="201847362, Ahmad Al-Qahtani, s201847362@kfupm.edu.sa&#10;202013845&#9;Faisal Al-Otaibi&#10;Mohammed Hassan 201955120 s201955120@kfupm.edu.sa"></textarea>'
+   +'<div class="row" style="margin-top:9px"><button class="btn" onclick="importPaste()">Add from list</button>'
+   +'<button class="btn ghost" onclick="document.getElementById(\'csvFile\').click()">Import CSV file</button>'
+   +'<input type="file" id="csvFile" accept=".csv,.txt" style="display:none" onchange="importCSV(this)">'
+   +'<button class="btn quiet" onclick="addOne()">Add one student</button>'
+   +'<button class="btn quiet" onclick="exportRoster()">Export roster CSV</button>'
+   +'<button class="btn quiet" onclick="copyEmails()">Copy e-mails</button></div></div>';
+  if(!s.students.length)return h+'<div class="empty"><strong>No students yet</strong>Paste your list above — the app separates IDs from names automatically.</div>';
+  h+='<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">'+s.students.length+' students</h2>'
+   +'<button class="btn sm quiet" onclick="sortRoster()">Sort by name</button></div>'
+   +'<div class="scroll" style="margin-top:10px"><table><thead><tr><th style="width:38px" class="num">#</th><th>Name</th><th>ID</th><th>E-mail</th><th></th></tr></thead><tbody>';
+  s.students.forEach(function(st,i){
+    h+='<tr><td class="num">'+(i+1)+'</td>'
+      +'<td><input type="text" dir="auto" value="'+esc(st.name)+'" style="width:100%;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'name\',this.value)"></td>'
+      +'<td><input type="text" class="mono" value="'+esc(st.sid)+'" style="width:130px;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'sid\',this.value)"></td>'
+      +'<td><input type="email" dir="ltr" value="'+esc(st.email||"")+'" placeholder="—" style="width:210px;border-color:transparent;background:transparent;padding:3px 4px" onchange="editStudent('+i+',\'email\',this.value)"></td>'
+      +'<td style="text-align:right"><button class="btn sm danger" onclick="delStudent('+i+')">Remove</button></td></tr>';
+  });
+  h+='</tbody></table></div><p class="hint" style="margin-top:8px">Click a name, ID or e-mail to correct it. Leave the e-mail blank if you don\'t have it.</p></div>';
+  return h;
+}
+function mergeStudents(list){
+  var s=sec(),have={};
+  s.students.forEach(function(x){if(typeof x.email!=="string")x.email="";have[x.sid]=x;});
+  var added=0,dup=0,filled=0;
+  list.forEach(function(x){
+    if(typeof x.email!=="string")x.email="";
+    if(have[x.sid]){dup++;if(x.email&&!have[x.sid].email){have[x.sid].email=x.email;filled++;}return;}
+    have[x.sid]=x;s.students.push(x);added++;
+  });
+  save();render();
+  toast(added+" added"+(dup?", "+dup+" already on the roster":"")+(filled?", "+filled+" e-mail(s) filled in":""));
+}
+function importPaste(){
+  var t=document.getElementById("paste").value;
+  if(!t.trim()){toast("Paste your list first");return;}
+  var list=parseRoster(t);
+  if(!list.length){toast("No students found in that text");return;}
+  mergeStudents(list);
+}
+function importCSV(input){
+  var f=input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    var list=parseRoster(String(r.result).replace(/"/g,""));
+    if(!list.length){toast("No students found in that file");return;}
+    mergeStudents(list);
+  };
+  r.readAsText(f,"utf-8");
+  input.value="";
+}
+function addOne(){
+  openSheet('<h2>Add student</h2><p class="hint">Name and ID are required; e-mail is optional.</p>'
+   +'<div class="row"><input type="text" id="oneName" class="grow" dir="auto" placeholder="Full name">'
+   +'<input type="text" id="oneId" class="mono" placeholder="ID" style="width:130px"></div>'
+   +'<div class="row" style="margin-top:9px"><input type="email" id="oneMail" class="grow" dir="ltr" placeholder="E-mail (optional)"></div>'
+   +'<div class="row" style="margin-top:12px"><button class="btn" onclick="saveOne()">Add</button><button class="btn quiet" onclick="closeSheet()">Cancel</button></div>');
+  setTimeout(function(){document.getElementById("oneName").focus();},50);
+}
+function saveOne(){
+  var n=document.getElementById("oneName").value.trim(),i=document.getElementById("oneId").value.trim();
+  var m=(document.getElementById("oneMail").value||"").trim();
+  if(!n||!i){toast("Name and ID are both needed");return;}
+  closeSheet();mergeStudents([{sid:i,name:n,email:m}]);
+}
+function editStudent(i,f,v){
+  var s=sec();v=v.trim();
+  if(f==="email"){s.students[i].email=v;save();return;}
+  if(!v){render();return;}
+  if(f==="sid"){
+    var old=s.students[i].sid;
+    if(old===v)return;
+    if(s.students.some(function(x,j){return j!==i&&x.sid===v;})){toast("That ID is already used");render();return;}
+    s.sessions.forEach(function(ses){if(ses.marks[old]!=null){ses.marks[v]=ses.marks[old];delete ses.marks[old];}});
+    s.assessments.forEach(function(a){if(a.scores[old]!=null){a.scores[v]=a.scores[old];delete a.scores[old];}});
+  }
+  s.students[i][f]=v;save();
+}
+function delStudent(i){
+  var s=sec();
+  if(!confirm("Remove "+s.students[i].name+" from this section?"))return;
+  var sid=s.students[i].sid;
+  s.students.splice(i,1);
+  s.sessions.forEach(function(ses){delete ses.marks[sid];});
+  s.assessments.forEach(function(a){delete a.scores[sid];});
+  save();render();
+}
+function sortRoster(){
+  sec().students.sort(function(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:"base"});});
+  save();render();
+}
+function exportRoster(){
+  var s=sec(),rows=[["ID","Name","E-mail"]];
+  s.students.forEach(function(st){rows.push([st.sid,st.name,st.email||""]);});
+  downloadCSV(slug(s.name)+"-roster.csv",rows);
+}
+function copyEmails(){
+  var s=sec(),list=s.students.map(function(st){return(st.email||"").trim();}).filter(Boolean);
+  if(!list.length){toast("No e-mail addresses on this roster yet");return;}
+  var txt=list.join(", "),missing=s.students.length-list.length;
+  var done=function(){toast(list.length+" address(es) copied"+(missing?", "+missing+" student(s) have none":""));};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,function(){promptCopy(txt);});
+  }else promptCopy(txt);
+}
+function promptCopy(txt){
+  openSheet('<h2>E-mail addresses</h2><p class="hint">Select all and copy.</p>'
+   +'<textarea rows="6" dir="ltr" onclick="this.select()">'+esc(txt)+'</textarea>'
+   +'<div class="row" style="margin-top:12px"><button class="btn" onclick="closeSheet()">Done</button></div>');
+}
+function slug(n){return n.replace(/[^\w\u0600-\u06FF -]/g,"").replace(/\s+/g,"_").slice(0,40)||"section";}
+
+/* ---------- attendance ---------- */
+var openSession=null;
+function viewAttendance(){
+  var s=sec();
+  if(!s.students.length)return '<div class="empty"><strong>Add students first</strong>Attendance needs a roster.<div style="margin-top:12px"><button class="btn" onclick="go(\'roster\')">Go to Roster</button></div></div>';
+  var cur=s.sessions.filter(function(x){return x.id===openSession;})[0]||null;
+  var h='<div class="card"><h2>'+esc(s.name)+' — attendance</h2>'
+   +'<div class="row"><input type="date" id="sesDate" value="'+todayISO()+'">'
+   +'<button class="btn" onclick="newSession()">Start session</button>'
+   +(cur?'<button class="btn ghost" onclick="startKiosk()">Student ID / scanner mode</button>':'')
+   +'</div>';
+  if(cur){
+    var marked=Object.keys(cur.marks).length;
+    h+='<div class="row" style="margin-top:14px;justify-content:space-between">'
+     +'<div><span class="tag">Open session</span> <b class="mono">'+cur.date+'</b> — <span id="cnt">'+marked+'</span> / '+s.students.length+' marked</div>'
+     +'<div><button class="btn sm quiet" onclick="markAll(\'P\')">All present</button> '
+     +'<button class="btn sm quiet" onclick="markRestAbsent()">Rest absent</button> '
+     +'<button class="btn sm quiet" onclick="clearSession()">Clear</button> '
+     +'<button class="btn sm" onclick="openSession=null;render()">Close session</button></div></div>'
+     +'<input type="text" id="filt" placeholder="Search name or ID" style="width:100%;margin-top:10px" oninput="filterMarks(this.value)">'
+     +'<div class="mark-list" id="marks">';
+    s.students.forEach(function(st){
+      h+=markRow(st,cur.marks[st.sid]||"");
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div class="card"><h2>Sessions held</h2>';
+  if(!s.sessions.length)h+='<p class="hint">None yet. Pick a date and start a session.</p>';
+  else{
+    h+='<table><thead><tr><th>Date</th><th class="num">Present</th><th class="num">Late</th><th class="num">Excused</th><th class="num">Absent</th><th></th></tr></thead><tbody>';
+    s.sessions.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(ses){
+      var c={P:0,L:0,E:0,A:0};
+      s.students.forEach(function(st){var m=ses.marks[st.sid];if(m)c[m]++;});
+      h+='<tr><td class="mono">'+ses.date+'</td><td class="num">'+c.P+'</td><td class="num">'+c.L+'</td><td class="num">'+c.E+'</td><td class="num">'+c.A+'</td>'
+        +'<td style="text-align:right;white-space:nowrap"><button class="btn sm quiet" onclick="openSession=\''+ses.id+'\';render()">Edit</button> '
+        +'<button class="btn sm danger" onclick="delSession(\''+ses.id+'\')">Delete</button></td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  h+='</div>';
+  return h;
+}
+function markRow(st,m){
+  var b=function(k){return '<button data-on="'+(m===k?k:"")+'" onclick="setMark(\''+st.sid+'\',\''+k+'\')">'+k+'</button>';};
+  return '<div class="mark-row" data-key="'+esc((st.name+" "+st.sid).toLowerCase())+'">'
+   +'<div class="who"><b dir="auto">'+esc(st.name)+'</b><span>'+esc(st.sid)+'</span></div>'
+   +'<div class="seg" data-sid="'+esc(st.sid)+'">'+b("P")+b("L")+b("E")+b("A")+'</div></div>';
+}
+function newSession(){
+  var s=sec(),d=document.getElementById("sesDate").value||todayISO();
+  var ex=s.sessions.filter(function(x){return x.date===d;})[0];
+  if(ex){openSession=ex.id;toast("Session for "+d+" reopened");render();return;}
+  var ses={id:uid(),date:d,marks:{}};
+  s.sessions.push(ses);openSession=ses.id;save();render();
+}
+function curSes(){var s=sec();return s?s.sessions.filter(function(x){return x.id===openSession;})[0]:null;}
+function setMark(sid,k){
+  var ses=curSes();if(!ses)return;
+  if(ses.marks[sid]===k)delete ses.marks[sid];else ses.marks[sid]=k;
+  save();
+  var seg=document.querySelector('.seg[data-sid="'+String(sid).replace(/"/g,"")+'"]');
+  if(!seg){render();return;}
+  var m=ses.marks[sid]||"";
+  Array.prototype.forEach.call(seg.children,function(btn){btn.setAttribute("data-on",btn.textContent===m?m:"");});
+  var c=document.getElementById("cnt");
+  if(c)c.textContent=Object.keys(ses.marks).length;
+}
+function markAll(k){
+  var ses=curSes();if(!ses)return;
+  sec().students.forEach(function(st){ses.marks[st.sid]=k;});save();render();
+}
+function markRestAbsent(){
+  var ses=curSes();if(!ses)return;
+  sec().students.forEach(function(st){if(!ses.marks[st.sid])ses.marks[st.sid]="A";});save();render();
+  toast("Unmarked students set to absent");
+}
+function clearSession(){
+  var ses=curSes();if(!ses)return;
+  if(!confirm("Clear all marks for this session?"))return;
+  ses.marks={};save();render();
+}
+function delSession(id){
+  var s=sec();
+  if(!confirm("Delete this session and its marks?"))return;
+  s.sessions=s.sessions.filter(function(x){return x.id!==id;});
+  if(openSession===id)openSession=null;
+  save();render();
+}
+function filterMarks(q){
+  q=q.trim().toLowerCase();
+  var rows=document.querySelectorAll("#marks .mark-row");
+  for(var i=0;i<rows.length;i++)rows[i].style.display=(!q||rows[i].dataset.key.indexOf(q)>=0)?"":"none";
+}
+
+/* ---------- kiosk ---------- */
+function startKiosk(){
+  if(!curSes()){toast("Start a session first");return;}
+  document.getElementById("kiosk").classList.add("on");
+  kioskCount();
+  document.getElementById("kioskMsg").innerHTML="";
+  var i=document.getElementById("kioskInput");i.value="";setTimeout(function(){i.focus();},80);
+}
+function kioskCount(){
+  var ses=curSes(),s=sec();if(!ses||!s)return;
+  var n=0;s.students.forEach(function(st){if(ses.marks[st.sid])n++;});
+  document.getElementById("kioskCount").textContent=n+" / "+s.students.length+"  •  "+ses.date;
+}
+function kioskSubmit(value){
+  var v=String(value||"").trim();
+  try{if(/^https?:/i.test(v)){var u=new URL(v);v=u.searchParams.get("sid")||v;}}catch(e){}
+  v=v.replace(/^student(?:-|\s|:)*id(?:\s|:)*|^student(?:\s|:)*/i,"").trim();
+  if(!v)return;
+  var s=sec(),ses=curSes(),msg=document.getElementById("kioskMsg");
+  var st=s.students.filter(function(x){return x.sid.toLowerCase()===v.toLowerCase();})[0];
+  if(!st){msg.innerHTML='Not on this roster<span class="sub">'+esc(v)+' — check the ID and try again</span>';return;}
+  if(ses.marks[st.sid]){msg.innerHTML='Already checked in<span class="sub" dir="auto">'+esc(st.name)+'</span>';return;}
+  ses.marks[st.sid]="P";save();kioskCount();
+  msg.innerHTML='Checked in<span class="sub" dir="auto">'+esc(st.name)+'</span>';
+  clearTimeout(msg._h);msg._h=setTimeout(function(){msg.innerHTML="";},2600);
+}
+document.getElementById("kioskInput").addEventListener("keydown",function(e){
+  if(e.key!=="Enter")return;
+  var v=this.value;this.value="";kioskSubmit(v);
+});
+var scanStream=null,scanDetector=null,scanTimer=null,lastScan="",lastScanAt=0;
+function stopCameraScan(){
+  clearTimeout(scanTimer);scanTimer=null;
+  if(scanStream){scanStream.getTracks().forEach(function(t){t.stop();});scanStream=null;}
+  var v=document.getElementById("kioskVideo");v.classList.remove("on");v.srcObject=null;
+  document.getElementById("kioskCamera").textContent="Use camera scanner";
+}
+function scanTick(){
+  if(!scanStream||!scanDetector)return;
+  scanDetector.detect(document.getElementById("kioskVideo")).then(function(codes){
+    if(!codes||!codes.length)return;
+    var raw=String(codes[0].rawValue||"").trim(),now=Date.now();
+    if(raw&&(raw!==lastScan||now-lastScanAt>2500)){lastScan=raw;lastScanAt=now;kioskSubmit(raw);}
+  }).catch(function(){}).then(function(){if(scanStream)scanTimer=setTimeout(scanTick,450);});
+}
+function toggleCameraScan(){
+  if(scanStream){stopCameraScan();return;}
+  var hint=document.getElementById("kioskScanHint");
+  if(typeof BarcodeDetector!=="function"||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){hint.textContent="Camera QR scanning is not available here. Use a USB scanner or type the ID.";return;}
+  Promise.resolve(BarcodeDetector.getSupportedFormats?BarcodeDetector.getSupportedFormats():["qr_code"]).then(function(formats){
+    if(formats.indexOf("qr_code")<0)throw new Error("unsupported");
+    scanDetector=new BarcodeDetector({formats:["qr_code"]});
+    return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+  }).then(function(stream){
+    scanStream=stream;var v=document.getElementById("kioskVideo");v.srcObject=stream;v.classList.add("on");
+    document.getElementById("kioskCamera").textContent="Stop camera";hint.textContent="Hold a student ID QR code inside the frame.";
+    return v.play();
+  }).then(scanTick).catch(function(){hint.textContent="Camera could not start. Allow camera access, or use a USB scanner / type the ID.";stopCameraScan();});
+}
+document.getElementById("kioskCamera").addEventListener("click",toggleCameraScan);
+document.getElementById("kioskExit").addEventListener("click",function(){
+  if(DB.settings.pin){
+    var p=prompt("PIN to exit check-in mode");
+    if(p!==DB.settings.pin){toast("Wrong PIN");return;}
+  }
+  stopCameraScan();
+  document.getElementById("kiosk").classList.remove("on");
+  render();
+});
+
+/* ---------- scores: categories, subtotals, per-section formula ---------- */
+var KINDS=[["quiz","Quiz","q","Quizzes"],["exam","Exam","Ex","Exams"],["oral","Oral exam","OEx","Oral exams"],["project","Project","P","Projects"],["final","Final exam","Fex","Final exam"]];
+function kindLabel(k){var f=KINDS.filter(function(x){return x[0]===k;})[0];return f?f[1]:k;}
+function kindPlural(k){var f=KINDS.filter(function(x){return x[0]===k;})[0];return f?f[3]:k;}
+function kindItems(s,k){return s.assessments.filter(function(a){return (a.kind||"quiz")===k;});}
+function varName(s,a){
+  var k=a.kind||"quiz",items=kindItems(s,k),i=items.indexOf(a)+1;
+  if(k==="final")return items.length>1?"Fex"+i:"Fex";
+  var pre=KINDS.filter(function(x){return x[0]===k;})[0][2];
+  return pre+i;
+}
+function kindTotal(s,sid,k){
+  var got=0,max=0,any=false;
+  kindItems(s,k).forEach(function(a){
+    max+=Number(a.max)||0;
+    var v=a.scores[sid];
+    if(v!=null&&v!==""){got+=Number(v);any=true;}
+  });
+  return{got:Math.round(got*100)/100,max:max,any:any};
+}
+function collect(s,a){
+  var out=[];
+  s.students.forEach(function(st){var v=a.scores[st.sid];if(v!=null&&v!=="")out.push(Number(v));});
+  return out;
+}
+
+/* --- formula engine --- */
+function formulaEnv(s,sid){
+  var vars={},lists={q:[],Ex:[],OEx:[],P:[],Fex:[]};
+  s.assessments.forEach(function(a){
+    var v=varName(s,a),k=a.kind||"quiz";
+    var val=a.scores[sid];
+    val=(val==null||val==="")?0:Number(val);
+    vars[v]=val;vars["M"+v]=Number(a.max)||0;
+    var pre=KINDS.filter(function(x){return x[0]===k;})[0][2];
+    if(lists[pre])lists[pre].push(val);
+  });
+  var q=kindTotal(s,sid,"quiz"),e=kindTotal(s,sid,"exam"),pj=kindTotal(s,sid,"project"),oe=kindTotal(s,sid,"oral");
+  vars.Q=q.got;vars.MQ=q.max;vars.E=e.got;vars.ME=e.max;vars.PJ=pj.got;vars.MPJ=pj.max;vars.OE=oe.got;vars.MOE=oe.max;
+  return{vars:vars,lists:lists};
+}
+function fTokens(src){
+  var t=[],i=0;
+  while(i<src.length){
+    var c=src.charAt(i);
+    if(/\s/.test(c)){i++;continue;}
+    if(/[0-9.]/.test(c)){var j=i;while(j<src.length&&/[0-9.]/.test(src.charAt(j)))j++;t.push({t:"num",v:parseFloat(src.slice(i,j))});i=j;continue;}
+    if(/[A-Za-z_]/.test(c)){var k=i;while(k<src.length&&/[A-Za-z0-9_]/.test(src.charAt(k)))k++;t.push({t:"id",v:src.slice(i,k)});i=k;continue;}
+    if("+-*/^(),".indexOf(c)>=0){t.push({t:c});i++;continue;}
+    throw new Error("This character is not allowed here: "+c);
+  }
+  return t;
+}
+function flatArgs(args){
+  var o=[];
+  args.forEach(function(a){if(Object.prototype.toString.call(a)==="[object Array]")o=o.concat(a);else o.push(a);});
+  return o;
+}
+function callFn(name,args){
+  var f=name.toLowerCase(),v=flatArgs(args);
+  var sum=function(x){return x.reduce(function(a,b){return a+b;},0);};
+  if(f==="sum")return sum(v);
+  if(f==="avg"||f==="mean")return v.length?sum(v)/v.length:0;
+  if(f==="min")return v.length?Math.min.apply(null,v):0;
+  if(f==="max")return v.length?Math.max.apply(null,v):0;
+  if(f==="count")return v.length;
+  if(f==="abs")return Math.abs(v[0]);
+  if(f==="sqrt")return Math.sqrt(v[0]);
+  if(f==="round"){var d=v.length>1?v[1]:0,m=Math.pow(10,d);return Math.round(v[0]*m)/m;}
+  if(f==="best"||f==="drop"){
+    var n=args[args.length-1];
+    if(Object.prototype.toString.call(n)==="[object Array]")throw new Error(name+"( ) needs a number at the end, e.g. "+f+"(q,1)");
+    var list=flatArgs(args.slice(0,-1)).slice().sort(function(a,b){return b-a;});
+    var keep=f==="best"?list.slice(0,n):list.slice(0,Math.max(0,list.length-n));
+    return sum(keep);
+  }
+  throw new Error("There is no function called "+name);
+}
+function evalFormula(src,env){
+  var t=fTokens(src),p=0;
+  function isList(x){return Object.prototype.toString.call(x)==="[object Array]";}
+  function eat(x){if(!t[p]||t[p].t!==x)throw new Error("Expected "+x);return t[p++];}
+  function primary(){
+    var tok=t[p];
+    if(!tok)throw new Error("The formula stops too early");
+    if(tok.t==="num"){p++;return tok.v;}
+    if(tok.t==="-"){p++;return -primary();}
+    if(tok.t==="+"){p++;return primary();}
+    if(tok.t==="("){p++;var v=expr();eat(")");return v;}
+    if(tok.t==="id"){
+      p++;
+      var name=tok.v;
+      if(t[p]&&t[p].t==="("){
+        p++;
+        var args=[];
+        if(t[p]&&t[p].t!==")"){
+          args.push(arg());
+          while(t[p]&&t[p].t===","){p++;args.push(arg());}
+        }
+        eat(")");
+        return callFn(name,args);
+      }
+      if(env.vars.hasOwnProperty(name))return env.vars[name];
+      if(env.lists[name])throw new Error(name+" is the whole list of marks — write sum("+name+") or avg("+name+")");
+      throw new Error("I do not know what "+name+" is");
+    }
+    throw new Error("Unexpected "+(tok.v!=null?tok.v:tok.t));
+  }
+  function arg(){
+    var tok=t[p],nxt=t[p+1];
+    if(tok&&tok.t==="id"&&env.lists[tok.v]&&!env.vars.hasOwnProperty(tok.v)&&(!nxt||nxt.t===","||nxt.t===")"))
+      {p++;return env.lists[tok.v].slice();}
+    return expr();
+  }
+  function power(){var b=primary();if(t[p]&&t[p].t==="^"){p++;return Math.pow(b,power());}return b;}
+  function term(){
+    var v=power();
+    while(t[p]&&(t[p].t==="*"||t[p].t==="/")){
+      var op=t[p].t;p++;var r=power();
+      if(op==="/"&&r===0)throw new Error("This formula divides by zero");
+      v=op==="*"?v*r:v/r;
+    }
+    return v;
+  }
+  function expr(){
+    var v=term();
+    while(t[p]&&(t[p].t==="+"||t[p].t==="-")){var op=t[p].t;p++;var r=term();v=op==="+"?v+r:v-r;}
+    return v;
+  }
+  var out=expr();
+  if(p<t.length)throw new Error("There is leftover text at the end");
+  if(isList(out))throw new Error("The result is a list — wrap it in sum( )");
+  if(typeof out!=="number"||!isFinite(out))throw new Error("The result is not a number");
+  return out;
+}
+function formulaError(s){
+  if(!s.formula||!s.formula.trim())return null;
+  var sid=s.students.length?s.students[0].sid:null;
+  try{evalFormula(s.formula,formulaEnv(s,sid));return null;}
+  catch(e){return e.message;}
+}
+
+function subTotals(s,sid){
+  var out=[];
+  KINDS.forEach(function(k){
+    var items=kindItems(s,k[0]);
+    if(items.length<2)return;
+    var me=kindTotal(s,sid,k[0]);
+    var vals=s.students.map(function(st){var t=kindTotal(s,st.sid,k[0]);return t.any?t.got:null;}).filter(function(x){return x!=null;});
+    out.push({label:kindPlural(k[0])+" total",got:me.any?me.got:null,max:me.max,
+      avg:mean(vals),med:median(vals),hi:vals.length?Math.max.apply(null,vals):null});
+  });
+  return out;
+}
+
+/* --- columns --- */
+function displayCols(s){
+  var cols=[];
+  KINDS.forEach(function(k){
+    var items=kindItems(s,k[0]);
+    if(!items.length)return;
+    items.forEach(function(a){cols.push({type:"item",a:a});});
+    if(items.length>1)cols.push({type:"sub",kind:k[0],label:kindPlural(k[0])+" total"});
+  });
+  return cols;
+}
+
+/* --- view --- */
+function viewScores(){
+  var s=sec();
+  if(!s.students.length)return '<div class="empty"><strong>Add students first</strong>Scores need a roster.<div style="margin-top:12px"><button class="btn" onclick="go(\'roster\')">Go to Roster</button></div></div>';
+  var h='<div class="card"><h2>'+esc(s.name)+' — quizzes, exams, projects</h2><p class="hint">Every item belongs to a category and gets a short name you can use in the formula below: quizzes are q1, q2 …, exams Ex1, Ex2 …, oral exams OEx1, OEx2 …, projects P1, P2 …, and the final exam is Fex.</p>'
+   +'<div class="row"><input type="text" id="asName" class="grow" placeholder="e.g. Quiz 1, Midterm 2, Oral exam 1, Project">'
+   +'<select id="asKind">'+KINDS.map(function(k){return '<option value="'+k[0]+'">'+k[1]+'</option>';}).join("")+'</select>'
+   +'<label class="tag">Out of</label><input type="number" id="asMax" value="10" min="1" step="0.5" style="width:80px">'
+   +'<button class="btn" onclick="addAssessment()">Add item</button></div>';
+  if(s.assessments.length){
+    h+='<div class="row" style="margin-top:12px">';
+    KINDS.forEach(function(k){
+      kindItems(s,k[0]).forEach(function(a){
+        h+='<span class="pill" style="background:var(--accent-soft);color:var(--accent)">'
+         +'<b class="mono">'+varName(s,a)+'</b> '+esc(a.name)+' /'+a.max+' '
+         +'<button class="btn sm" style="padding:0 4px;border:none;background:none;color:var(--accent)" onclick="editAssessment(\''+a.id+'\')" title="Edit">✎</button>'
+         +'<button class="btn sm" style="padding:0 4px;border:none;background:none;color:var(--absent)" onclick="delAssessment(\''+a.id+'\')" title="Delete">×</button></span>';
+      });
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  if(!s.assessments.length)return h+'<div class="empty"><strong>No items yet</strong>Add your first quiz or exam above.</div>';
+
+  h+=formulaCard(s);
+
+  var cols=displayCols(s),err=formulaError(s);
+  h+='<div class="card"><div class="scroll"><table><thead><tr><th class="stick">Student</th>';
+  cols.forEach(function(c){
+    if(c.type==="item")h+='<th class="num" style="min-width:88px"><span class="mono" style="color:var(--accent)">'+varName(s,c.a)+'</span><br>'+esc(c.a.name)+'<br><span class="mono" style="font-weight:400;text-transform:none;letter-spacing:0">/'+c.a.max+'</span></th>';
+    else{
+      var mx=kindTotal(s,s.students[0].sid,c.kind).max;
+      h+='<th class="num" style="min-width:92px;background:var(--accent-soft);color:var(--accent)">'+c.label+'<br><span class="mono" style="font-weight:400;text-transform:none;letter-spacing:0">/'+mx+'</span></th>';
+    }
+  });
+  h+='<th class="num" style="min-width:80px">Total</th></tr></thead><tbody>';
+  s.students.forEach(function(st){
+    h+='<tr><td class="stick"><b dir="auto">'+esc(st.name)+'</b><br><span class="mono" style="font-size:11px;color:var(--ink-3)">'+esc(st.sid)+'</span></td>';
+    cols.forEach(function(c){
+      if(c.type==="item"){
+        var v=c.a.scores[st.sid];
+        h+='<td class="num"><input type="number" step="0.25" min="0" value="'+(v==null?"":v)+'" style="width:68px;text-align:right;font-family:var(--mono);padding:3px 5px" onchange="setScore(\''+c.a.id+'\',\''+st.sid+'\',this.value)"></td>';
+      }else{
+        var k=kindTotal(s,st.sid,c.kind);
+        h+='<td class="num" style="background:var(--accent-soft);font-weight:600">'+(k.any?k.got:"—")+'</td>';
+      }
+    });
+    var t=weightedTotal(s,st.sid);
+    h+='<td class="num"><b>'+(t==null?"—":t)+'</b></td></tr>';
+  });
+  h+='</tbody><tfoot>';
+  [["Average",mean],["Median",median],["Highest",function(a){return a.length?Math.max.apply(null,a):null;}],["Lowest",function(a){return a.length?Math.min.apply(null,a):null;}],["Std dev",stdev]].forEach(function(pair){
+    h+='<tr><td class="stick" style="background:var(--surface-2)"><span class="tag">'+pair[0]+'</span></td>';
+    cols.forEach(function(c){
+      var vals;
+      if(c.type==="item")vals=collect(s,c.a);
+      else vals=s.students.map(function(st){var k=kindTotal(s,st.sid,c.kind);return k.any?k.got:null;}).filter(function(x){return x!=null;});
+      h+='<td class="num" style="background:var(--surface-2)">'+r2(pair[1](vals))+'</td>';
+    });
+    var tot=s.students.map(function(st){return weightedTotal(s,st.sid);}).filter(function(x){return x!=null;});
+    h+='<td class="num" style="background:var(--surface-2)"><b>'+r2(pair[1](tot))+'</b></td></tr>';
+  });
+  h+='</tfoot></table></div>';
+  if(err)h+='<p class="hint" style="color:var(--absent);margin-top:10px">The Total column is empty because the formula has a problem: '+esc(err)+'</p>';
+  h+='<div class="row" style="margin-top:12px"><button class="btn quiet" onclick="exportScores()">Export scores CSV</button></div></div>';
+  return h;
+}
+function formulaCard(s){
+  var err=formulaError(s),has=!!(s.formula&&s.formula.trim());
+  var h='<div class="card"><h2>How is the total computed for this section?</h2>'
+   +'<p class="hint">Write the formula the way you would on paper. Marks are raw, so divide by the maximum where you want a percentage. Each section keeps its own formula.</p>'
+   +'<textarea id="fml" rows="3" placeholder="Q/MQ*20 + Ex1/MEx1*15 + Ex2/MEx2*15 + Fex/MFex*50">'+esc(s.formula||"")+'</textarea>'
+   +'<div class="row" style="margin-top:8px"><button class="btn" onclick="saveFormula()">Save formula</button>'
+   +'<button class="btn quiet" onclick="suggestFormula()">Suggest one from the items</button>'
+   +'<button class="btn quiet" onclick="clearFormula()">Use equal weights instead</button>'
+   +'<span id="fmlMsg" class="hint" style="margin-left:6px">'+(has?(err?'<span style="color:var(--absent)">'+esc(err)+'</span>':'In use'):'Not set — totals fall back to the weights on each item')+'</span></div>';
+  h+='<h3 class="sub">Names you can use</h3><div class="scroll" style="max-height:230px"><table><thead><tr><th>Name</th><th>Means</th><th class="num">Out of</th></tr></thead><tbody>';
+  KINDS.forEach(function(k){
+    kindItems(s,k[0]).forEach(function(a){
+      var v=varName(s,a);
+      h+='<tr><td class="mono" style="color:var(--accent)">'+v+'</td><td>'+esc(a.name)+'</td><td class="num">'+a.max+'</td></tr>'
+       +'<tr><td class="mono" style="color:var(--ink-3)">M'+v+'</td><td style="color:var(--ink-2)">maximum of '+esc(a.name)+'</td><td class="num">—</td></tr>';
+    });
+  });
+  var q=kindTotal(s,s.students.length?s.students[0].sid:"","quiz"),
+      e=kindTotal(s,s.students.length?s.students[0].sid:"","exam"),
+      oe=kindTotal(s,s.students.length?s.students[0].sid:"","oral"),
+      pj=kindTotal(s,s.students.length?s.students[0].sid:"","project");
+  if(kindItems(s,"quiz").length)h+='<tr><td class="mono" style="color:var(--accent)">Q</td><td>total of all quizzes &nbsp;<span class="mono" style="color:var(--ink-3)">MQ = its maximum</span></td><td class="num">'+q.max+'</td></tr>';
+  if(kindItems(s,"exam").length)h+='<tr><td class="mono" style="color:var(--accent)">E</td><td>total of all exams &nbsp;<span class="mono" style="color:var(--ink-3)">ME = its maximum</span></td><td class="num">'+e.max+'</td></tr>';
+  if(kindItems(s,"oral").length)h+='<tr><td class="mono" style="color:var(--accent)">OE</td><td>total of all oral exams &nbsp;<span class="mono" style="color:var(--ink-3)">MOE = its maximum</span></td><td class="num">'+oe.max+'</td></tr>';
+  if(kindItems(s,"project").length)h+='<tr><td class="mono" style="color:var(--accent)">PJ</td><td>total of all projects &nbsp;<span class="mono" style="color:var(--ink-3)">MPJ = its maximum</span></td><td class="num">'+pj.max+'</td></tr>';
+  h+='</tbody></table></div>'
+   +'<p class="hint" style="margin-top:10px">Also available: <span class="mono">sum(q) avg(q) min(q) max(q) count(q)</span>, and <span class="mono">drop(q,1)</span> for the quiz total after dropping the lowest one, <span class="mono">best(q,4)</span> for the best four. Lists are <span class="mono">q</span>, <span class="mono">Ex</span>, <span class="mono">OEx</span>, <span class="mono">P</span>. A missing mark counts as zero.</p>';
+  if(s.students.length)h+='<div class="row"><button class="btn sm quiet" onclick="testFormula()">Try it on the first students</button></div><div id="fmlTest"></div>';
+  h+='</div>';
+  return h;
+}
+function saveFormula(){
+  var s=sec();
+  s.formula=document.getElementById("fml").value.trim();
+  save();render();
+  var e=formulaError(sec());
+  toast(e?("Saved, but: "+e):(s.formula?"Formula in use":"Formula cleared"));
+}
+function clearFormula(){
+  var s=sec();s.formula="";save();render();toast("Back to the weights on each item");
+}
+function suggestFormula(){
+  var s=sec(),parts=[];
+  if(kindItems(s,"quiz").length)parts.push("Q/MQ*20");
+  kindItems(s,"exam").forEach(function(a){parts.push(varName(s,a)+"/M"+varName(s,a)+"*20");});
+  if(kindItems(s,"oral").length)parts.push("OE/MOE*10");
+  kindItems(s,"project").forEach(function(a){parts.push(varName(s,a)+"/M"+varName(s,a)+"*10");});
+  if(kindItems(s,"final").length)parts.push("Fex/MFex*40");
+  document.getElementById("fml").value=parts.join(" + ");
+  toast("Adjust the numbers, then Save formula");
+}
+function testFormula(){
+  var s=sec(),src=document.getElementById("fml").value.trim(),out=document.getElementById("fmlTest");
+  if(!src){out.innerHTML='<p class="hint">Nothing to test — the box is empty.</p>';return;}
+  var h='<table style="margin-top:8px"><thead><tr><th>Student</th><th class="num">Total</th></tr></thead><tbody>';
+  s.students.slice(0,5).forEach(function(st){
+    var v;
+    try{v=Math.round(evalFormula(src,formulaEnv(s,st.sid))*100)/100;}
+    catch(e){out.innerHTML='<p class="hint" style="color:var(--absent)">'+esc(e.message)+'</p>';v=null;}
+    if(v==null)return;
+    h+='<tr><td dir="auto">'+esc(st.name)+'</td><td class="num mono">'+v+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(out.innerHTML.indexOf("var(--absent)")<0)out.innerHTML=h;
+}
+function addAssessment(){
+  var s=sec(),n=document.getElementById("asName").value.trim();
+  if(!n){toast("Name the item first");return;}
+  s.assessments.push({id:uid(),name:n,kind:document.getElementById("asKind").value,
+    max:Number(document.getElementById("asMax").value)||10,weight:0,scores:{}});
+  save();render();
+}
+function editAssessment(id){
+  var s=sec(),a=s.assessments.filter(function(x){return x.id===id;})[0];
+  openSheet('<h2>'+esc(a.name)+'</h2><p class="hint mono">'+varName(s,a)+'</p>'
+   +'<div class="row"><input type="text" id="edName" class="grow" value="'+esc(a.name)+'">'
+   +'<select id="edKind">'+KINDS.map(function(k){return '<option value="'+k[0]+'"'+((a.kind||"quiz")===k[0]?" selected":"")+'>'+k[1]+'</option>';}).join("")+'</select>'
+   +'<label class="tag">Out of</label><input type="number" id="edMax" value="'+a.max+'" min="1" step="0.5" style="width:80px"></div>'
+   +'<p class="hint" style="margin-top:10px">Changing the category renumbers the short names, so check your formula afterwards.</p>'
+   +'<div class="row"><button class="btn" onclick="saveAssessment(\''+id+'\')">Save</button><button class="btn quiet" onclick="closeSheet()">Cancel</button></div>');
+}
+function saveAssessment(id){
+  var s=sec(),a=s.assessments.filter(function(x){return x.id===id;})[0];
+  a.name=document.getElementById("edName").value.trim()||a.name;
+  a.kind=document.getElementById("edKind").value;
+  a.max=Number(document.getElementById("edMax").value)||a.max;
+  save();closeSheet();render();
+}
+function delAssessment(id){
+  var s=sec(),a=s.assessments.filter(function(x){return x.id===id;})[0];
+  if(!confirm('Delete "'+a.name+'" and all its marks?'))return;
+  s.assessments=s.assessments.filter(function(x){return x.id!==id;});save();render();
+}
+function setScore(aid,sid,v){
+  var s=sec(),a=s.assessments.filter(function(x){return x.id===aid;})[0];
+  if(v===""||v==null)delete a.scores[sid];
+  else{
+    var n=Number(v);
+    if(isNaN(n)){toast("Numbers only");return;}
+    if(n>a.max)toast("Above the maximum for "+a.name);
+    a.scores[sid]=n;
+  }
+  save();render();
+}
+function exportScores(){
+  var s=sec(),cols=displayCols(s),head=["ID","Name"];
+  cols.forEach(function(c){head.push(c.type==="item"?(varName(s,c.a)+" "+c.a.name+" /"+c.a.max):c.label);});
+  head.push("Total");
+  var rows=[head];
+  s.students.forEach(function(st){
+    var r=[st.sid,st.name];
+    cols.forEach(function(c){
+      if(c.type==="item"){var v=c.a.scores[st.sid];r.push(v==null?"":v);}
+      else{var k=kindTotal(s,st.sid,c.kind);r.push(k.any?k.got:"");}
+    });
+    r.push(weightedTotal(s,st.sid));
+    rows.push(r);
+  });
+  downloadCSV(slug(s.name)+"-scores.csv",rows);
+}
+
+/* ---------- reports ---------- */
+function viewReports(){
+  var s=sec();
+  if(!s.students.length)return '<div class="empty"><strong>Add students first</strong>Reports need a roster.</div>';
+  var sess=s.sessions.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  var flagged=s.students.filter(function(st){return attStats(s,st.sid).absent>=DB.settings.warnAt;});
+  var pcts=s.students.map(function(st){return attStats(s,st.sid).pct;}).filter(function(x){return x!=null;});
+
+  var h='<div class="card"><h2>'+esc(s.name)+' — overview</h2>'
+   +'<div class="stats"><div class="stat"><b>'+s.students.length+'</b><span>students</span></div>'
+   +'<div class="stat"><b>'+sess.length+'</b><span>sessions</span></div>'
+   +'<div class="stat"><b>'+r1(mean(pcts))+'%</b><span>mean attendance</span></div>'
+   +'<div class="stat"><b>'+r1(median(pcts))+'%</b><span>median</span></div>'
+   +'<div class="stat"><b>'+flagged.length+'</b><span>flagged</span></div></div>'
+   +'<div class="row noprint"><button class="btn quiet" onclick="exportAttendance()">Export attendance CSV</button>'
+   +'<button class="btn quiet" onclick="exportSummary()">Export summary CSV</button>'
+   +'<button class="btn quiet" onclick="window.print()">Print this page</button>'
+   +'<button class="btn ghost" onclick="exportPortal()">Export student portal</button>'
+   +'<button class="btn ghost" onclick="exportPerStudent()">Export one file per student</button></div></div>';
+
+  if(flagged.length){
+    h+='<div class="card"><h2>Absence warnings</h2><p class="hint">Warning at '+DB.settings.warnAt+' absences, limit at '+DB.settings.absenceLimit+'. “Prepare e-mail” opens a personalised draft in your mail app; you review it before sending.</p><table><thead><tr><th>Student</th><th>ID</th><th class="num">Absences</th><th class="num">Attendance</th><th>E-mail</th><th></th></tr></thead><tbody>';
+    flagged.sort(function(a,b){return attStats(s,b.sid).absent-attStats(s,a.sid).absent;}).forEach(function(st){
+      var a=attStats(s,st.sid);
+      h+='<tr><td dir="auto">'+esc(st.name)+'</td><td class="mono">'+esc(st.sid)+'</td>'
+       +'<td class="num"><span class="pill '+(a.absent>=DB.settings.absenceLimit?"bad":"warn")+'">'+a.absent+'</span></td>'
+       +'<td class="num">'+(a.pct==null?"—":a.pct+"%")+'</td><td>'+(st.email?'<span class="mono" style="font-size:11px">'+esc(st.email)+'</span>':'<span class="pill warn">missing</span>')+'</td>'
+       +'<td style="text-align:right;white-space:nowrap"><button class="btn sm quiet noprint" onclick="studentCard(\''+st.sid+'\')">Report</button> '
+       +'<button class="btn sm noprint" onclick="warningMail(\''+st.sid+'\')"'+(st.email?'':' disabled title="Add an e-mail address in Roster"')+'>Prepare e-mail</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+
+  h+='<div class="card"><h2>Attendance record</h2>'
+   +'<div class="legend"><span><i style="background:var(--present-bg);border:1px solid var(--present)"></i>P present</span>'
+   +'<span><i style="background:var(--late-bg);border:1px solid var(--late)"></i>L late</span>'
+   +'<span><i style="background:var(--excused-bg);border:1px solid var(--excused)"></i>E excused</span>'
+   +'<span><i style="background:var(--absent-bg);border:1px solid var(--absent)"></i>A absent</span></div>';
+  if(!sess.length)h+='<p class="hint">No sessions recorded yet.</p>';
+  else{
+    h+='<div class="scroll"><table><thead><tr><th class="stick">Student</th>';
+    sess.forEach(function(ses){h+='<th class="cell" title="'+ses.date+'">'+fmtDate(ses.date)+'</th>';});
+    h+='<th class="num">%</th><th class="num">Abs</th><th class="noprint"></th></tr></thead><tbody>';
+    s.students.forEach(function(st){
+      h+='<tr><td class="stick"><b dir="auto">'+esc(st.name)+'</b><br><span class="mono" style="font-size:11px;color:var(--ink-3)">'+esc(st.sid)+'</span></td>';
+      sess.forEach(function(ses){
+        var m=ses.marks[st.sid]||"";
+        h+='<td class="cell c-'+m+'"><i>'+(m||"·")+'</i></td>';
+      });
+      var a=attStats(s,st.sid);
+      h+='<td class="num">'+(a.pct==null?"—":a.pct)+'</td><td class="num">'+a.absent+'</td>'
+       +'<td class="noprint" style="text-align:right"><button class="btn sm quiet" onclick="studentCard(\''+st.sid+'\')">Report</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function warningMail(sid){
+  var s=sec(),st=s.students.filter(function(x){return x.sid===sid;})[0];
+  if(!st||!st.email){toast("Add this student's e-mail address in Roster first");return;}
+  var a=attStats(s,sid),over=a.absent>=DB.settings.absenceLimit;
+  var subject=(over?"Attendance limit reached":"Attendance warning")+" — "+s.name;
+  var body="Dear "+st.name+",\n\nAccording to the attendance register for "+s.name+", you have "+a.absent+" recorded absence"+(a.absent===1?"":"s")+" after "+a.held+" class session"+(a.held===1?"":"s")+". Your current attendance rate is "+(a.pct==null?"not yet available":a.pct+"%")+".\n\n"+(over?("This has reached the course absence limit of "+DB.settings.absenceLimit+"."):("The warning threshold is "+DB.settings.warnAt+" absences and the course limit is "+DB.settings.absenceLimit+"."))+" Please contact me promptly if the record needs correction or if there are circumstances I should know about.\n\nRegards,\nOthman Echi";
+  window.location.href="mailto:"+encodeURIComponent(st.email)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+}
+function studentCard(sid){
+  var s=sec(),st=s.students.filter(function(x){return x.sid===sid;})[0];
+  var a=attStats(s,sid);
+  var h='<h2 dir="auto">'+esc(st.name)+'</h2><p class="hint mono">'+esc(st.sid)+' · '+esc(s.name)+'</p>'
+   +'<div class="stats"><div class="stat"><b>'+(a.pct==null?"—":a.pct+"%")+'</b><span>attendance</span></div>'
+   +'<div class="stat"><b>'+a.absent+'</b><span>absences</span></div>'
+   +'<div class="stat"><b>'+a.late+'</b><span>late</span></div>'
+   +'<div class="stat"><b>'+a.held+'</b><span>sessions</span></div></div>';
+  if(s.assessments.length){
+    h+='<h3 class="sub">Scores against the class</h3><table><thead><tr><th>Item</th><th class="num">Mark</th><th class="num">Out of</th><th class="num">Class avg</th><th class="num">Median</th><th class="num">High</th></tr></thead><tbody>';
+    KINDS.forEach(function(k){
+      var items=kindItems(s,k[0]);
+      items.forEach(function(as){
+        var v=as.scores[sid],vals=collect(s,as);
+        h+='<tr><td><span class="mono" style="color:var(--accent)">'+varName(s,as)+'</span> '+esc(as.name)+'</td><td class="num"><b>'+(v==null?"—":v)+'</b></td><td class="num">'+as.max+'</td>'
+         +'<td class="num">'+r2(mean(vals))+'</td><td class="num">'+r2(median(vals))+'</td><td class="num">'+(vals.length?Math.max.apply(null,vals):"—")+'</td></tr>';
+      });
+      if(items.length>1){
+        var me=kindTotal(s,sid,k[0]);
+        var vals=s.students.map(function(st){var t=kindTotal(s,st.sid,k[0]);return t.any?t.got:null;}).filter(function(x){return x!=null;});
+        h+='<tr style="background:var(--accent-soft)"><td><b>'+kindPlural(k[0])+' total</b></td><td class="num"><b>'+(me.any?me.got:"—")+'</b></td><td class="num">'+me.max+'</td>'
+         +'<td class="num">'+r2(mean(vals))+'</td><td class="num">'+r2(median(vals))+'</td><td class="num">'+(vals.length?Math.max.apply(null,vals):"—")+'</td></tr>';
+      }
+    });
+    var mine=weightedTotal(s,sid),all=s.students.map(function(x){return weightedTotal(s,x.sid);}).filter(function(x){return x!=null;});
+    h+='<tr><td><b>Total</b></td><td class="num"><b>'+(mine==null?"—":mine+"%")+'</b></td><td class="num">100</td>'
+     +'<td class="num">'+r1(mean(all))+'</td><td class="num">'+r1(median(all))+'</td><td class="num">'+(all.length?r1(Math.max.apply(null,all)):"—")+'</td></tr>';
+    h+='</tbody></table>';
+  }
+  h+='<div class="row" style="margin-top:14px"><button class="btn quiet" onclick="window.print()">Print</button><button class="btn quiet" onclick="closeSheet()">Close</button></div>';
+  openSheet(h);
+}
+function exportAttendance(){
+  var s=sec(),sess=s.sessions.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  var head=["ID","Name"];sess.forEach(function(x){head.push(x.date);});
+  head.push("Present","Late","Excused","Absent","Attendance %");
+  var rows=[head];
+  s.students.forEach(function(st){
+    var r=[st.sid,st.name];
+    sess.forEach(function(ses){r.push(ses.marks[st.sid]||"");});
+    var a=attStats(s,st.sid);
+    r.push(a.present,a.late,a.excused,a.absent,a.pct==null?"":a.pct);
+    rows.push(r);
+  });
+  downloadCSV(slug(s.name)+"-attendance.csv",rows);
+}
+function exportSummary(){
+  var s=sec(),rows=[["ID","Name","E-mail","Sessions","Absent","Attendance %","Total %","Flag"]];
+  s.students.forEach(function(st){
+    var a=attStats(s,st.sid);
+    rows.push([st.sid,st.name,st.email||"",a.held,a.absent,a.pct==null?"":a.pct,weightedTotal(s,st.sid),
+      a.absent>=DB.settings.absenceLimit?"OVER LIMIT":(a.absent>=DB.settings.warnAt?"warning":"")]);
+  });
+  downloadCSV(slug(s.name)+"-summary.csv",rows);
+}
+
+/* ---------- student portal export ---------- */
+function exportPortal(){
+  var s=sec();
+  var stats={};
+  s.assessments.forEach(function(a){
+    var v=collect(s,a);
+    stats[a.id]={name:a.name,max:a.max,weight:a.weight,avg:mean(v),med:median(v),hi:v.length?Math.max.apply(null,v):null,lo:v.length?Math.min.apply(null,v):null,n:v.length};
+  });
+  var totals=s.students.map(function(st){return weightedTotal(s,st.sid);}).filter(function(x){return x!=null;});
+  var att=s.students.map(function(st){return attStats(s,st.sid).pct;}).filter(function(x){return x!=null;});
+  var people={};
+  s.students.forEach(function(st){
+    var a=attStats(s,st.sid),sc={};
+    s.assessments.forEach(function(x){var v=x.scores[st.sid];if(v!=null)sc[x.id]=v;});
+    people[String(st.sid).toLowerCase()]={name:st.name,sid:st.sid,att:a,scores:sc,subs:subTotals(s,st.sid).map(function(x){return{label:x.label,got:x.got,max:x.max};}),total:weightedTotal(s,st.sid)};
+  });
+  var sub0=subTotals(s,s.students.length?s.students[0].sid:"");
+  var payload={section:s.name,order:s.assessments.map(function(a){return a.id;}),stats:stats,people:people,
+    subs:sub0.map(function(x){return{label:x.label,max:x.max,avg:x.avg,med:x.med,hi:x.hi};}),
+    classTotal:{avg:mean(totals),med:median(totals),hi:totals.length?Math.max.apply(null,totals):null},
+    classAtt:{avg:mean(att),med:median(att)},limit:DB.settings.absenceLimit};
+  var html=portalHTML(JSON.stringify(payload));
+  downloadFile(slug(s.name)+"-student-view.html",html,"text/html;charset=utf-8");
+  toast("Student view file downloaded");
+}
+function portalHTML(json){
+  var css="body{margin:0;background:#E9EDF1;color:#14212E;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:22px 14px}"
+   +".w{max-width:640px;margin:0 auto;background:#fff;border:1px solid #D3DBE3;border-radius:10px;padding:20px}"
+   +"h1{font-family:Georgia,serif;font-size:20px;margin:0 0 2px}"
+   +".sub{color:#8496A6;font-size:13px;margin:0 0 16px;font-family:ui-monospace,Menlo,Consolas,monospace}"
+   +"input{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;padding:10px;border:1px solid #B7C3CD;border-radius:6px;width:190px;text-align:center;letter-spacing:.08em}"
+   +"button{background:#0F5A6E;color:#fff;border:none;border-radius:6px;padding:11px 16px;font-size:15px;cursor:pointer;margin-left:6px}"
+   +"table{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px}"
+   +"th,td{border-bottom:1px solid #D3DBE3;padding:7px 8px;text-align:left}"
+   +"th{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#8496A6;background:#F5F8FA}"
+   +"td.n,th.n{text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace}"
+   +".stats{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}"
+   +".stat b{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px}"
+   +".stat span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#8496A6}"
+   +".warn{background:#F7E3E2;color:#B02A28;padding:8px 11px;border-radius:6px;font-size:13px;margin-top:10px}"
+   +"h3{font-family:Georgia,serif;font-size:15px;margin:18px 0 4px}";
+  var js=[
+   'var D=window.__DATA__;',
+   'document.getElementById("sec").textContent=D.section;',
+   'function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}',
+   'function r(n,d){return n==null?"\\u2014":(Math.round(n*(d?100:10))/(d?100:10)).toString();}',
+   'function look(){',
+   ' var v=document.getElementById("q").value.trim().toLowerCase();',
+   ' var p=D.people[v], out=document.getElementById("out");',
+   ' if(!p){out.innerHTML=\'<div class="warn">No record for that ID in this section.</div>\';return;}',
+   ' var h=\'<h3>\'+esc(p.name)+\'</h3><div class="stats">\';',
+   ' h+=\'<div class="stat"><b>\'+(p.att.pct==null?"\\u2014":p.att.pct+"%")+\'</b><span>my attendance</span></div>\';',
+   ' h+=\'<div class="stat"><b>\'+p.att.absent+\'</b><span>absences</span></div>\';',
+   ' h+=\'<div class="stat"><b>\'+r(D.classAtt.avg)+\'%</b><span>class average</span></div>\';',
+   ' h+=\'<div class="stat"><b>\'+r(D.classAtt.med)+\'%</b><span>class median</span></div></div>\';',
+   ' if(p.att.absent>=D.limit)h+=\'<div class="warn">You have reached the absence limit for this course.</div>\';',
+   ' if(D.order.length){',
+   '  h+=\'<h3>Quizzes and exams</h3><table><thead><tr><th>Item</th><th class="n">My mark</th><th class="n">Out of</th><th class="n">Average</th><th class="n">Median</th><th class="n">High</th></tr></thead><tbody>\';',
+   '  D.order.forEach(function(id){var st=D.stats[id],v=p.scores[id];',
+   '   h+=\'<tr><td>\'+esc(st.name)+\'</td><td class="n"><b>\'+(v==null?"\\u2014":v)+\'</b></td><td class="n">\'+st.max+\'</td><td class="n">\'+r(st.avg,1)+\'</td><td class="n">\'+r(st.med,1)+\'</td><td class="n">\'+(st.hi==null?"\\u2014":st.hi)+\'</td></tr>\';});',
+   '  h+=\'<tr><td><b>Total</b></td><td class="n"><b>\'+(p.total==null?"\\u2014":p.total+"%")+\'</b></td><td class="n">100</td><td class="n">\'+r(D.classTotal.avg)+\'</td><td class="n">\'+r(D.classTotal.med)+\'</td><td class="n">\'+r(D.classTotal.hi)+\'</td></tr>\';',
+   '  (D.subs||[]).forEach(function(sb,i){var mine=(p.subs&&p.subs[i])?p.subs[i].got:null;',
+   '   h+=\'<tr style="background:#E1EEF2"><td><b>\'+esc(sb.label)+\'</b></td><td class="n"><b>\'+(mine==null?"\\u2014":mine)+\'</b></td><td class="n">\'+sb.max+\'</td><td class="n">\'+r(sb.avg,1)+\'</td><td class="n">\'+r(sb.med,1)+\'</td><td class="n">\'+(sb.hi==null?"\\u2014":sb.hi)+\'</td></tr>\';});',
+   '  h+=\'</tbody></table>\';',
+   ' }',
+   ' out.innerHTML=h;',
+   '}',
+   'document.getElementById("go").onclick=look;',
+   'document.getElementById("q").addEventListener("keydown",function(e){if(e.key==="Enter")look();});'
+  ].join("\n");
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+   +'<meta name="viewport" content="width=device-width, initial-scale=1">'
+   +'<title>My record</title><style>'+css+'</style></head><body><div class="w">'
+   +'<h1>My record</h1><p class="sub" id="sec"></p>'
+   +'<div><input id="q" inputmode="numeric" placeholder="Student ID" autocomplete="off"><button id="go">Show</button></div>'
+   +'<div id="out"></div></div>'
+   +'<script>window.__DATA__='+json.replace(/</g,"\\u003c")+';<\/script>'
+   +'<script>'+js+'<\/script></body></html>';
+}
+
+/* ---------- one private file per student ---------- */
+function reportCSS(){
+  return "body{margin:0;background:#E9EDF1;color:#14212E;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px 14px}"
+   +".w{max-width:620px;margin:0 auto;background:#fff;border:1px solid #D3DBE3;border-radius:10px;padding:22px}"
+   +"h1{font-family:Georgia,serif;font-size:21px;margin:0 0 2px}"
+   +".sub{color:#8496A6;font-size:12.5px;margin:0 0 4px;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em}"
+   +"h3{font-family:Georgia,serif;font-size:15px;margin:20px 0 6px;border-top:1px solid #D3DBE3;padding-top:14px}"
+   +"table{border-collapse:collapse;width:100%;font-size:14px}"
+   +"th,td{border-bottom:1px solid #D3DBE3;padding:7px 8px;text-align:left}"
+   +"th{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#8496A6;background:#F5F8FA;font-weight:600}"
+   +"td.n,th.n{text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace}"
+   +"tr.tot td{border-top:2px solid #B7C3CD;font-weight:700}"
+   +".stats{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0 2px}"
+   +".stat b{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px}"
+   +".stat span{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#8496A6}"
+   +".warn{background:#F7E3E2;color:#B02A28;padding:9px 12px;border-radius:6px;font-size:13px;margin-top:14px}"
+   +".ok{background:#E4F2EA;color:#1E7A4B;padding:9px 12px;border-radius:6px;font-size:13px;margin-top:14px}"
+   +".foot{color:#8496A6;font-size:11.5px;margin-top:18px;font-family:ui-monospace,Menlo,Consolas,monospace}"
+   +"@media print{body{background:#fff;padding:0}.w{border:none;padding:0}}";
+}
+function studentFileHTML(s,st){
+  var a=attStats(s,st.sid);
+  var attAll=s.students.map(function(x){return attStats(s,x.sid).pct;}).filter(function(x){return x!=null;});
+  var h='<div class="w"><h1 dir="auto">'+esc(st.name)+'</h1>'
+   +'<p class="sub">'+esc(st.sid)+'</p><p class="sub">'+esc(s.name)+'</p>'
+   +'<h3>Attendance</h3><div class="stats">'
+   +'<div class="stat"><b>'+(a.pct==null?"&mdash;":a.pct+"%")+'</b><span>my attendance</span></div>'
+   +'<div class="stat"><b>'+a.absent+'</b><span>absences</span></div>'
+   +'<div class="stat"><b>'+a.late+'</b><span>late</span></div>'
+   +'<div class="stat"><b>'+a.held+'</b><span>sessions held</span></div>'
+   +'<div class="stat"><b>'+r1(mean(attAll))+'%</b><span>class average</span></div>'
+   +'<div class="stat"><b>'+r1(median(attAll))+'%</b><span>class median</span></div></div>';
+  if(a.absent>=DB.settings.absenceLimit)
+    h+='<div class="warn">You have reached the absence limit of '+DB.settings.absenceLimit+' for this course.</div>';
+  else if(a.absent>=DB.settings.warnAt)
+    h+='<div class="warn">You are at '+a.absent+' absences. The limit for this course is '+DB.settings.absenceLimit+'.</div>';
+  if(s.assessments.length){
+    h+='<h3>Quizzes and exams</h3><table><thead><tr><th>Item</th><th class="n">My mark</th><th class="n">Out of</th><th class="n">Class avg</th><th class="n">Median</th><th class="n">High</th></tr></thead><tbody>';
+    KINDS.forEach(function(k){
+      var items=kindItems(s,k[0]);
+      items.forEach(function(as){
+        var v=as.scores[st.sid],vals=collect(s,as);
+        h+='<tr><td>'+esc(as.name)+'</td><td class="n"><b>'+(v==null?"&mdash;":v)+'</b></td><td class="n">'+as.max+'</td>'
+         +'<td class="n">'+r2(mean(vals))+'</td><td class="n">'+r2(median(vals))+'</td><td class="n">'+(vals.length?Math.max.apply(null,vals):"&mdash;")+'</td></tr>';
+      });
+      if(items.length>1){
+        var me=kindTotal(s,st.sid,k[0]);
+        var vals=s.students.map(function(x){var t=kindTotal(s,x.sid,k[0]);return t.any?t.got:null;}).filter(function(x){return x!=null;});
+        h+='<tr style="background:#E1EEF2"><td><b>'+kindPlural(k[0])+' total</b></td><td class="n"><b>'+(me.any?me.got:"&mdash;")+'</b></td><td class="n">'+me.max+'</td>'
+         +'<td class="n">'+r2(mean(vals))+'</td><td class="n">'+r2(median(vals))+'</td><td class="n">'+(vals.length?Math.max.apply(null,vals):"&mdash;")+'</td></tr>';
+      }
+    });
+    var mine=weightedTotal(s,st.sid),all=s.students.map(function(x){return weightedTotal(s,x.sid);}).filter(function(x){return x!=null;});
+    h+='<tr class="tot"><td>Total</td><td class="n">'+(mine==null?"&mdash;":mine+"%")+'</td><td class="n">100</td>'
+     +'<td class="n">'+r1(mean(all))+'</td><td class="n">'+r1(median(all))+'</td><td class="n">'+(all.length?r1(Math.max.apply(null,all)):"&mdash;")+'</td></tr></tbody></table>';
+  }
+  h+='<p class="foot">Issued '+todayISO()+' &middot; class figures are averages over the whole section</p></div>';
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+   +'<meta name="viewport" content="width=device-width, initial-scale=1">'
+   +'<title>'+esc(st.name)+' &mdash; my record</title><style>'+reportCSS()+'</style></head><body>'+h+'</body></html>';
+}
+
+/* minimal ZIP writer (stored, no compression) */
+var CRCT=null;
+function crc32(buf){
+  if(!CRCT){CRCT=new Int32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);CRCT[n]=c;}}
+  var crc=-1;
+  for(var i=0;i<buf.length;i++)crc=(crc>>>8)^CRCT[(crc^buf[i])&0xFF];
+  return (crc^-1)>>>0;
+}
+function zipFiles(files){
+  var enc=new TextEncoder(),parts=[],central=[],offset=0;
+  var d=new Date(),dosT=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF;
+  var dosD=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  files.forEach(function(f){
+    var name=enc.encode(f.name),data=enc.encode(f.content),crc=crc32(data);
+    var lh=new Uint8Array(30+name.length),v=new DataView(lh.buffer);
+    v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint16(8,0,true);
+    v.setUint16(10,dosT,true);v.setUint16(12,dosD,true);v.setUint32(14,crc,true);
+    v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);
+    v.setUint16(26,name.length,true);v.setUint16(28,0,true);
+    lh.set(name,30);
+    parts.push(lh,data);
+    var ch=new Uint8Array(46+name.length),w=new DataView(ch.buffer);
+    w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x0800,true);
+    w.setUint16(10,0,true);w.setUint16(12,dosT,true);w.setUint16(14,dosD,true);w.setUint32(16,crc,true);
+    w.setUint32(20,data.length,true);w.setUint32(24,data.length,true);
+    w.setUint16(28,name.length,true);w.setUint16(30,0,true);w.setUint16(32,0,true);
+    w.setUint16(34,0,true);w.setUint16(36,0,true);w.setUint32(38,0,true);w.setUint32(42,offset,true);
+    ch.set(name,46);
+    central.push(ch);
+    offset+=lh.length+data.length;
+  });
+  var cdSize=central.reduce(function(n,c){return n+c.length;},0);
+  var eo=new Uint8Array(22),e=new DataView(eo.buffer);
+  e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);
+  e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);
+  e.setUint32(12,cdSize,true);e.setUint32(16,offset,true);e.setUint16(20,0,true);
+  return new Blob(parts.concat(central,[eo]),{type:"application/zip"});
+}
+function exportPerStudent(){
+  var s=sec();
+  if(!s.students.length){toast("No students in this section");return;}
+  var used={},files=s.students.map(function(st){
+    var base=String(st.sid).replace(/[^\w.\-]/g,"_")||"student";
+    if(used[base])base=base+"-"+(++used[base]);else used[base]=1;
+    return{name:base+".html",content:studentFileHTML(s,st)};
+  });
+  var blob=zipFiles(files);
+  var u=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=u;a.download=slug(s.name)+"-student-files.zip";document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove();},600);
+  toast(files.length+" files packed");
+}
+
+/* ---------- live check-in (Apps Script backend) ---------- */
+function liveCfg(){return{url:(DB.settings.url||"").trim(),token:(DB.settings.token||"").trim()};}
+function secKey(){var s=sec();return s?("s"+s.id):"";}
+function studentLink(page){
+  var c=liveCfg();
+  if(!c.url)return"";
+  return c.url+(c.url.indexOf("?")>=0?"&":"?")+"page="+page+"&s="+encodeURIComponent(secKey());
+}
+var lastQRLink="";
+function showCheckinQR(date,code){
+  var u=studentLink("checkin");
+  if(!u){toast("Add the web app URL and token first");return;}
+  lastQRLink=u;
+  openSheet('<h2>Scan to check in</h2><p class="hint">'+esc(sec().name)+' · '+esc(date||todayISO())+'</p>'
+    +'<div class="qr-stage"><div id="qrCanvas"><span class="hint">Preparing QR code…</span></div></div>'
+    +(code?'<div style="text-align:center;margin:-2px 0 14px"><span class="tag">Class code</span><div class="mono" style="font-size:34px;letter-spacing:.15em;font-weight:700">'+esc(code)+'</div></div>':'')
+    +'<p class="hint">Students scan this code, enter their student ID and the current class code. Keep the session open only while the class is checking in.</p>'
+    +'<div class="link-box">'+esc(u)+'</div>'
+    +'<div class="row" style="margin-top:12px"><button class="btn" onclick="copyText(lastQRLink)">Copy check-in link</button><a class="btn ghost" href="'+esc(u)+'" target="_blank" rel="noopener">Open check-in page</a><button class="btn quiet" onclick="window.print()">Print</button></div>');
+  setTimeout(function(){
+    var box=document.getElementById("qrCanvas");if(!box)return;
+    box.innerHTML="";
+    if(typeof QRCode!=="function"){
+      box.innerHTML='<span class="hint" style="max-width:210px;text-align:center">QR maker could not load. Copy the check-in link instead.</span>';
+      return;
+    }
+    try{new QRCode(box,{text:u,width:220,height:220,colorDark:"#0b2830",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});}
+    catch(e){box.innerHTML='<span class="hint">Use the check-in link below.</span>';}
+  },30);
+}
+function showCurrentQR(){
+  var d=document.getElementById("liveDate"),c=document.getElementById("liveCode");
+  showCheckinQR(d&&d.value?d.value:todayISO(),c?c.value.trim():"");
+}
+function post(body){
+  var c=liveCfg();
+  return fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      try{return JSON.parse(t);}
+      catch(e){throw new Error("The server answered with a page instead of data — check the web app URL and that access is set to Anyone.");}
+    });
+}
+function livePayload(){
+  var s=sec();
+  return{name:s.name,students:s.students.map(function(st){return{sid:st.sid,name:st.name};})};
+}
+function localCard(){
+  return '<div class="card"><h2>Offline check-in &mdash; classroom network</h2>'
+   +'<p class="hint">No internet needed. Run <span class="mono">CHECKIN_LOCAL.py</span> on this machine (double-click <span class="mono">START_CHECKIN.bat</span>), write the address and class code on the board, and students check in from their phones over the Wi-Fi or your hotspot. When the class ends, import the file it saved.</p>'
+   +'<div class="row"><input type="date" id="locDate" value="'+todayISO()+'">'
+   +'<button class="btn" onclick="document.getElementById(\'locFile\').click()">Import check-ins file</button>'
+   +'<input type="file" id="locFile" accept=".json,.csv" style="display:none" onchange="importCheckinFile(this)">'
+   +'<span id="locMsg" class="hint" style="margin-left:6px"></span></div>'
+   +'<p class="hint" style="margin-top:8px">The file is named <span class="mono">checkins-YYYY-MM-DD.json</span> and sits in the same folder as the script. Everyone in it is marked present here; nobody is marked absent for you.</p></div>';
+}
+function importCheckinFile(input){
+  var f=input.files[0];if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var txt=String(rd.result).replace(/^\uFEFF/,""),list=null,date=null;
+    try{
+      var j=JSON.parse(txt);
+      list=j.checkins||j;date=j.date||null;
+    }catch(e){
+      list=[];
+      txt.split(/\r?\n/).forEach(function(line,i){
+        var cells=line.split(",").map(function(x){return x.replace(/^"|"$/g,"").trim();});
+        if(cells.length<1||!cells[0])return;
+        if(!/\d{3,}/.test(cells[0]))return;
+        list.push({sid:cells[0],name:cells[1]||""});
+      });
+    }
+    if(!list||!list.length){msg("locMsg","No check-ins found in that file",true);return;}
+    var d=date||document.getElementById("locDate").value||todayISO();
+    var n=mergeCheckins(d,list);
+    msg("locMsg",d+": "+n.added+" marked present, "+n.skipped+" already recorded");
+    render();
+  };
+  rd.readAsText(f,"utf-8");
+  input.value="";
+}
+function viewLive(){
+  var s=sec(),c=liveCfg();
+  var h='<div class="card hero"><span class="eyebrow">Square-code attendance</span><h1>Let students scan. Keep the register yours.</h1><p>Publish only the roster, open a time-limited class session, and show its QR code. Students identify themselves and enter the rotating class code; you pull successful check-ins into the register.</p></div>'+localCard()+'<div class="card"><h2>QR check-in over the internet</h2><p class="hint">Students check in from their own phones. Publish the section first, open a session, then pull the check-ins into this file. This file remains the master copy.</p>'
+   +'<div class="row"><label class="tag" style="width:70px">Web app URL</label>'
+   +'<input type="text" class="grow mono" style="font-size:12px" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(c.url)+'" onchange="DB.settings.url=this.value.trim();save();render()"></div>'
+   +'<div class="row" style="margin-top:8px"><label class="tag" style="width:70px">Token</label>'
+   +'<input type="text" class="mono" style="width:190px" value="'+esc(c.token)+'" onchange="DB.settings.token=this.value.trim();save();render()">'
+   +'<span class="hint" style="margin:0">Printed in the Apps Script log when you run setup().</span></div></div>';
+  if(!c.url||!c.token)
+    return h+'<div class="empty"><strong>Internet check-in not set up</strong>Optional. Follow the steps at the top of CHECKIN_SERVER.gs, then paste the URL and token above. The offline route above works without any of this.</div>';
+  if(!s.students.length)
+    return h+'<div class="empty"><strong>Add students first</strong>There is nothing to publish yet.</div>';
+
+  h+='<div class="card"><h2>1 &middot; Publish '+esc(s.name)+'</h2><p class="hint">Sends only student IDs and names to your private check-in spreadsheet. Scores, e-mail addresses and attendance history remain in this browser.</p>'
+   +'<button class="btn" onclick="doPublish(this)">Publish this section</button>'
+   +'<span id="pubMsg" class="hint" style="margin-left:10px"></span></div>';
+
+  h+='<div class="card"><h2>2 &middot; Open the session</h2><p class="hint">Show the class code on the projector — students need it to check in, so nobody marks themselves present from the cafeteria.</p>'
+   +'<div class="row"><input type="date" id="liveDate" value="'+todayISO()+'">'
+   +'<label class="tag">Class code</label><input type="text" id="liveCode" class="mono" style="width:100px" value="'+(""+Math.floor(1000+Math.random()*9000))+'">'
+   +'<button class="btn" onclick="doOpen(this)">Open check-in</button>'
+   +'<button class="btn quiet" onclick="doClose(this)">Close check-in</button>'
+   +'<button class="btn ghost" onclick="showCurrentQR()">Show QR code</button>'
+   +'<span id="liveMsg" class="hint" style="margin-left:6px"></span></div>'
+   +'<div class="row" style="margin-top:12px"><span class="tag" style="width:70px">Check-in link</span>'
+   +'<input type="text" class="grow mono" style="font-size:12px" readonly value="'+esc(studentLink("checkin"))+'" onclick="this.select()">'
+   +'<button class="btn sm quiet" onclick="copyText(\''+esc(studentLink("checkin"))+'\')">Copy</button></div>'
+   +'<p class="privacy-note"><b>PRIVATE</b><span>The QR check-in never contains your instructor token, scores or e-mail addresses. Use the Reports tab to print or export individual grade records.</span></p></div>';
+
+  h+='<div class="card"><h2>3 &middot; Pull the check-ins</h2><p class="hint">Marks every student who checked in as present in that day\'s session here. Nobody is set to absent — you keep that decision.</p>'
+   +'<div class="row"><input type="date" id="pullDate" value="'+todayISO()+'">'
+   +'<button class="btn" onclick="doPull(this)">Pull check-ins</button>'
+   +'<span id="pullMsg" class="hint" style="margin-left:6px"></span></div>'
+   +'<h3 class="sub">If your browser blocks the connection</h3>'
+   +'<p class="hint">Open the list in a browser tab, copy everything you see, and paste it here instead.</p>'
+   +'<div class="row"><button class="btn sm quiet" onclick="openList()">Open list in browser</button></div>'
+   +'<textarea id="pasteJson" rows="3" style="margin-top:8px" placeholder="Paste the page contents here"></textarea>'
+   +'<button class="btn quiet" style="margin-top:6px" onclick="doPaste()">Merge pasted check-ins</button></div>';
+  return h;
+}
+function msg(id,text,bad){
+  var el=document.getElementById(id);
+  if(el){el.textContent=text;el.style.color=bad?"var(--absent)":"var(--present)";}
+}
+function copyText(t){
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast("Link copied");},function(){toast("Select the link and copy it");});
+  else toast("Select the link and copy it");
+}
+function doPublish(btn){
+  var c=liveCfg();
+  btn.disabled=true;msg("pubMsg","Sending…");
+  post({action:"publish",token:c.token,key:secKey(),payload:livePayload()})
+    .then(function(r){
+      btn.disabled=false;
+      if(!r.ok){msg("pubMsg",r.msg||"Refused",true);return;}
+      msg("pubMsg","Published — "+r.students+" students");
+    })
+    .catch(function(e){btn.disabled=false;msg("pubMsg",e.message,true);});
+}
+function doOpen(btn){
+  var c=liveCfg(),d=document.getElementById("liveDate").value||todayISO(),code=document.getElementById("liveCode").value.trim();
+  btn.disabled=true;msg("liveMsg","Opening…");
+  post({action:"open",token:c.token,key:secKey(),date:d,code:code})
+    .then(function(r){
+      btn.disabled=false;
+      if(!r.ok){msg("liveMsg",r.msg||"Refused",true);return;}
+      msg("liveMsg","Open for "+d+(code?" — code "+code:""));
+      var s=sec();
+      if(!s.sessions.some(function(x){return x.date===d;})){s.sessions.push({id:uid(),date:d,marks:{}});save();}
+      showCheckinQR(d,code);
+    })
+    .catch(function(e){btn.disabled=false;msg("liveMsg",e.message,true);});
+}
+function doClose(btn){
+  var c=liveCfg();
+  btn.disabled=true;msg("liveMsg","Closing…");
+  post({action:"close",token:c.token,key:secKey()})
+    .then(function(r){btn.disabled=false;msg("liveMsg",r.ok?"Closed":(r.msg||"Refused"),!r.ok);})
+    .catch(function(e){btn.disabled=false;msg("liveMsg",e.message,true);});
+}
+function doPull(btn){
+  var c=liveCfg(),d=document.getElementById("pullDate").value||todayISO();
+  btn.disabled=true;msg("pullMsg","Fetching…");
+  post({action:"checkins",token:c.token,key:secKey(),date:d})
+    .then(function(r){
+      btn.disabled=false;
+      if(!r.ok){msg("pullMsg",r.msg||"Refused",true);return;}
+      var n=mergeCheckins(d,r.checkins);
+      msg("pullMsg",n.added+" marked present, "+n.skipped+" already recorded");
+    })
+    .catch(function(e){btn.disabled=false;msg("pullMsg",e.message,true);});
+}
+function openList(){
+  var c=liveCfg();
+  var d=document.getElementById("pullDate").value||todayISO();
+  var u=c.url+(c.url.indexOf("?")>=0?"&":"?")+"action=checkins&token="+encodeURIComponent(c.token)+"&s="+encodeURIComponent(secKey())+"&date="+d;
+  window.open(u,"_blank");
+}
+function doPaste(){
+  var t=document.getElementById("pasteJson").value.trim();
+  if(!t){toast("Paste the page contents first");return;}
+  var r;
+  try{r=JSON.parse(t);}catch(e){toast("That is not the check-in list");return;}
+  var list=r.checkins||r;
+  if(!list||!list.length){toast("No check-ins in that text");return;}
+  var d=r.date||document.getElementById("pullDate").value||todayISO();
+  var n=mergeCheckins(d,list);
+  msg("pullMsg",n.added+" marked present, "+n.skipped+" already recorded");
+}
+function mergeCheckins(date,list){
+  var s=sec(),ses=s.sessions.filter(function(x){return x.date===date;})[0];
+  if(!ses){ses={id:uid(),date:date,marks:{}};s.sessions.push(ses);}
+  var added=0,skipped=0,unknown=0;
+  list.forEach(function(c){
+    var sid=String(c.sid||"").trim();
+    var st=s.students.filter(function(x){return String(x.sid).toLowerCase()===sid.toLowerCase();})[0];
+    if(!st){unknown++;return;}
+    if(ses.marks[st.sid]==="P"||ses.marks[st.sid]==="L"||ses.marks[st.sid]==="E"){skipped++;return;}
+    ses.marks[st.sid]="P";added++;
+  });
+  save();
+  if(unknown)toast(unknown+" check-in(s) had IDs not on this roster");
+  return{added:added,skipped:skipped};
+}
+
+/* ---------- backup ---------- */
+function viewBackup(){
+  return '<div class="card"><h2>Backup</h2><p class="hint">Your data lives in this browser only. Save a backup file regularly, and to move everything to another computer or phone, restore that file there.</p>'
+   +'<div class="row"><button class="btn" onclick="exportAll()">Save backup file</button>'
+   +'<button class="btn ghost" onclick="document.getElementById(\'bkFile\').click()">Restore from backup</button>'
+   +'<input type="file" id="bkFile" accept=".json" style="display:none" onchange="importAll(this)"></div>'
+   +'<p class="hint" style="margin-top:14px">Currently held: '+DB.sections.length+' section(s), '
+   +DB.sections.reduce(function(n,s){return n+s.students.length;},0)+' students, '
+   +DB.sections.reduce(function(n,s){return n+s.sessions.length;},0)+' sessions.</p></div>'
+   +'<div class="card"><h2>Danger zone</h2><p class="hint">Deletes every section, roster, session and score in this browser.</p>'
+   +'<button class="btn danger" onclick="wipe()">Erase all data</button></div>';
+}
+function exportAll(){
+  downloadFile("class-register-backup-"+todayISO()+".json",JSON.stringify(DB,null,1),"application/json");
+  toast("Backup saved");
+}
+function importAll(input){
+  var f=input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(String(r.result));
+      if(!d||!d.sections)throw 0;
+      if(!confirm("Replace the data in this browser with the backup ("+d.sections.length+" section(s))?"))return;
+      DB=Object.assign(blank(),d);save();render();toast("Backup restored");
+    }catch(e){toast("That file is not a Class Register backup");}
+  };
+  r.readAsText(f,"utf-8");
+  input.value="";
+}
+function wipe(){
+  if(!confirm("Erase everything? Save a backup first if you might need this data."))return;
+  if(!confirm("Last check — erase all sections, rosters, attendance and scores?"))return;
+  DB=blank();save();go("sections");
+}
+
+/* ============================ start ============================ */
+load();
+if(DB.sections.length&&!sec())DB.activeId=DB.sections[0].id;
+tab="dashboard";
+render();
+</script>
+</body>
+</html>

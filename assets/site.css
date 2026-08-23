@@ -154,6 +154,20 @@ img {
   color: var(--accent-strong);
 }
 
+.site-nav a.nav-register,
+.site-header.scrolled .site-nav a.nav-register {
+  background: var(--gold);
+  color: #17120a;
+  font-weight: 800;
+}
+
+.site-nav a.nav-register:hover,
+.site-header.scrolled .site-nav a.nav-register:hover {
+  background: #f6d47d;
+  color: #17120a;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
 .nav-toggle {
   display: none;
   width: 42px;

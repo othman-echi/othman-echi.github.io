@@ -179,8 +179,7 @@ h1 {
 
 .section-heading .section-label { grid-column: 1 / -1; margin-bottom: -0.25rem; }
 
-.section-heading h2,
-.homework h2 {
+.section-heading h2 {
   margin-bottom: 0;
   color: var(--navy-deep);
   font-size: clamp(2rem, 4vw, 3.15rem);
@@ -188,8 +187,7 @@ h1 {
   letter-spacing: -0.035em;
 }
 
-.section-heading > p:last-child,
-.homework p:last-child { margin: 0; color: var(--muted); }
+.section-heading > p:last-child { margin: 0; color: var(--muted); }
 
 .resource-grid { display: grid; gap: 1rem; }
 
@@ -241,31 +239,6 @@ h1 {
 .button:hover { transform: translateY(-1px); }
 .button:focus-visible { outline: 3px solid rgba(20, 122, 131, 0.32); outline-offset: 2px; }
 
-.homework {
-  display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  gap: clamp(1.3rem, 4vw, 3rem);
-  align-items: center;
-  margin-bottom: clamp(4rem, 8vw, 7rem);
-  padding: clamp(1.6rem, 5vw, 3rem);
-  border: 1px solid #d8c89c;
-  background: #fffaf0;
-}
-
-.homework-icon {
-  display: grid;
-  width: 96px;
-  height: 96px;
-  place-items: center;
-  border: 1px solid #d8c89c;
-  border-radius: 50%;
-  color: #796322;
-  font-family: Georgia, "Times New Roman", serif;
-  text-align: center;
-}
-
-.homework h2 { margin-bottom: 0.7rem; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
-
 footer {
   display: flex;
   justify-content: space-between;
@@ -288,8 +261,6 @@ footer a { color: #b8e5e4; }
   .section-heading .section-label { grid-column: auto; }
   .resource-card { grid-template-columns: 1fr; }
   .resource-number { font-size: 2.7rem; }
-  .homework { grid-template-columns: 1fr; }
-  .homework-icon { width: 78px; height: 78px; }
   footer { align-items: flex-start; flex-direction: column; }
 }
 

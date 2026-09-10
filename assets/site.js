@@ -493,11 +493,6 @@ const publications = [
     tags: ["topology"],
     title: "Chronology violation on locally finite quasiordered sets",
     meta: "Othman Echi. Phys. Rev. D - Accepted 9 September, 2026.",
-    comment: [
-      "This work is inspired by one of humanity's oldest physical and philosophical dreams: the possibility of traveling into the past or the future. It explores questions of chronology through an interplay of Mathematics, Philosophy, and Physics, where formal structures meet our deepest intuitions about time, causality, and temporal order.",
-      "Beyond the technical results, the paper reflects a broader conviction: progress often begins when we question the apparent linearity of things of time, reasoning, and established ways of thinking.",
-      "I dedicate this work to all resistant individuals whose thinking refuses to remain linear."
-    ],
     link: "https://doi.org/10.1103/pm11-f75t"
   }
 ];
@@ -516,6 +511,11 @@ const latestNewsItem = {
   journal: "Phys. Rev. D",
   title: "Chronology violation on locally finite quasiordered sets",
   collaborators: "",
+  comment: [
+    "This work is inspired by one of humanity's oldest physical and philosophical dreams: the possibility of traveling into the past or the future. It explores questions of chronology through an interplay of Mathematics, Philosophy, and Physics, where formal structures meet our deepest intuitions about time, causality, and temporal order.",
+    "Beyond the technical results, the paper reflects a broader conviction: progress often begins when we question the apparent linearity of things of time, reasoning, and established ways of thinking.",
+    "I dedicate this work to all resistant individuals whose thinking refuses to remain linear."
+  ],
   link: "https://doi.org/10.1103/pm11-f75t"
 };
 
@@ -586,7 +586,7 @@ function renderPublications() {
 
   const items = publications.filter((publication) => {
     const matchesFilter = state.filter === "all" || publication.tags.includes(state.filter);
-    const haystack = `${publication.number} ${publication.year} ${publication.title} ${publication.meta} ${(publication.comment || []).join(" ")} ${publication.tags.join(" ")}`.toLowerCase();
+    const haystack = `${publication.number} ${publication.year} ${publication.title} ${publication.meta} ${publication.tags.join(" ")}`.toLowerCase();
     return matchesFilter && (!query || haystack.includes(query));
   });
 
@@ -598,7 +598,6 @@ function renderPublications() {
       <div>
         <h3>${escapeHtml(publication.number + ". " + publication.title)}</h3>
         <p>${escapeHtml(publication.meta)}</p>
-        ${publication.comment ? `<div class="publication-comment">${publication.comment.map((paragraph, index) => `<p>${index === 0 ? "<strong>Comment.</strong> " : ""}${escapeHtml(paragraph)}</p>`).join("")}</div>` : ""}
         ${publication.link ? `<a href="${publication.link}" rel="noopener">Open DOI</a>` : ""}
       </div>
     </article>
@@ -626,11 +625,12 @@ function renderLatestNews() {
   item.setAttribute("data-reveal", "");
   item.innerHTML = `
     <time datetime="${latestNewsItem.year}">${latestNewsItem.year}</time>
-    <h3>New paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
+    <h3>Forthcoming paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
     <p>
       &ldquo;${escapeHtml(latestNewsItem.title)}&rdquo;
       ${latestNewsItem.collaborators ? `(with ${escapeHtml(latestNewsItem.collaborators)}).` : "Accepted 9 September, 2026."}
     </p>
+    ${latestNewsItem.comment ? `<div class="news-comment">${latestNewsItem.comment.map((paragraph, index) => `<p>${index === 0 ? "<strong>Comment.</strong> " : ""}${escapeHtml(paragraph)}</p>`).join("")}</div>` : ""}
     <a class="news-link" href="${latestNewsItem.link}" rel="noopener">Open DOI</a>
   `;
 

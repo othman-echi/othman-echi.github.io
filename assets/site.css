@@ -645,10 +645,18 @@ img {
   color: var(--muted);
 }
 
-.publication .publication-abstract {
+.publication .publication-comment {
   margin-top: 10px;
+}
+
+.publication .publication-comment p {
+  margin: 0;
   line-height: 1.65;
   color: var(--ink);
+}
+
+.publication .publication-comment p + p {
+  margin-top: 8px;
 }
 
 .publication a {

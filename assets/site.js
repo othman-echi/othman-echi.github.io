@@ -486,6 +486,14 @@ const publications = [
     title: "Frobenius-Polynomial Second-Order Linear Differential Equations: Structure and Recognition in the Real-Indicial Case",
     meta: "H. Al-Attas; S. Algarni; Othman Echi. Symmetry 18, no. 8, Article 1365, 2026.",
     link: "https://doi.org/10.3390/sym18081365"
+  },
+  {
+    number: 72,
+    year: 2026,
+    tags: ["topology"],
+    title: "Chronology violation on locally finite quasiordered sets",
+    meta: "Othman Echi. Phys. Rev. D - Accepted 9 September, 2026.",
+    link: "https://doi.org/10.1103/pm11-f75t"
   }
 ];
 
@@ -498,12 +506,12 @@ const state = {
 };
 
 const latestNewsItem = {
-  doi: "10.3390/sym18081365",
+  doi: "10.1103/pm11-f75t",
   year: 2026,
-  journal: "Symmetry",
-  title: "Frobenius-Polynomial Second-Order Linear Differential Equations: Structure and Recognition in the Real-Indicial Case",
-  collaborators: "Husain Al-Attas and Said Algarni",
-  link: "https://doi.org/10.3390/sym18081365"
+  journal: "Phys. Rev. D",
+  title: "Chronology violation on locally finite quasiordered sets",
+  collaborators: "",
+  link: "https://doi.org/10.1103/pm11-f75t"
 };
 
 const qs = (selector, root = document) => root.querySelector(selector);
@@ -615,7 +623,7 @@ function renderLatestNews() {
     <h3>New paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
     <p>
       &ldquo;${escapeHtml(latestNewsItem.title)}&rdquo;
-      (with ${escapeHtml(latestNewsItem.collaborators)}).
+      ${latestNewsItem.collaborators ? `(with ${escapeHtml(latestNewsItem.collaborators)}).` : "Accepted 9 September, 2026."}
     </p>
     <a class="news-link" href="${latestNewsItem.link}" rel="noopener">Open DOI</a>
   `;

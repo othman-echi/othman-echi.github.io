@@ -5,7 +5,7 @@
   const courses = new Map([
     ["/drive/folders/1UjDDTHxBOWgyOfvKD9Ov06tSq1WuuK6s", {
       event: "course-combinatoire-lsm1",
-      title: "Combinatoire-LSM1"
+      title: "Combinatorics-LSM1"
     }],
     ["/drive/folders/14zMOgdNLsMqSFA5qNI2-kKv99u6Kudml", {
       event: "course-general-topology-lmi3",

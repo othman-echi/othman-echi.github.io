@@ -53,7 +53,7 @@ GitHub Pages will then publish the site automatically.
 `assets/course-analytics.js` records separate GoatCounter events for every
 homepage link to the two course folders:
 
-- `course-combinatoire-lsm1`: Combinatoire-LSM1
+- `course-combinatoire-lsm1`: Combinatorics-LSM1 (event key retained to preserve totals)
 - `course-general-topology-lmi3`: General Topology-LMI3
 
 The account is `othman-echi.goatcounter.com`. Public visitor counters are enabled;

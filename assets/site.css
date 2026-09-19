@@ -1188,3 +1188,16 @@ img {
     color: #000;
   }
 }
+.course-counter {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+}
+
+.hero-actions .button:has(.course-counter) {
+  flex-direction: column;
+  gap: 0.15rem;
+}

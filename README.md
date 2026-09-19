@@ -48,6 +48,31 @@ In the GitHub repository settings:
 
 GitHub Pages will then publish the site automatically.
 
+## Course Link Analytics
+
+`assets/course-analytics.js` records separate GoatCounter events for every
+homepage link to the two course folders:
+
+- `course-combinatoire-lsm1`: Combinatoire-LSM1
+- `course-general-topology-lmi3`: General Topology-LMI3
+
+The account is `othman-echi.goatcounter.com`. Public visitor counters are enabled;
+the dashboard remains private. No password or API secret belongs in this repository.
+Read-only JSON counters display visitor totals on the hero course buttons and
+in Teaching. GoatCounter caches these totals for up to four hours. A new event's
+404 response with count "0" displays zero; errors display "unavailable", not zero.
+Counting began in September 2026; local previews never record course events.
+
+The private GoatCounter dashboard shows each course event and its visitor
+statistics. Default session deduplication is retained; repeat clicks are not
+represented as distinct people. Estimates are subject to the provider's session
+definition and can miss blocked scripts or clicks before the script loads.
+No extra homepage pageview is sent by this integration. Viewing the homepage
+does not count as opening a course. Direct Google Drive visits and historical
+clicks are not available. The integration leaves the folder URLs unchanged.
+
+Documentation: https://www.goatcounter.com/help/events
+
 ## License
 
 All academic content belongs to Professor Othman Echi. Reuse of website code is

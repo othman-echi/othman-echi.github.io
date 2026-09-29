@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <base target="_blank">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <style>
+    *{box-sizing:border-box}body{font:15px/1.5 system-ui,sans-serif;color:#14202e;background:#fff;margin:0;padding:16px}h2{font-size:18px;margin:0 0 8px}p{margin:8px 0}a{color:#0a4b56}button{background:#0a4b56;color:#fff;border:0;border-radius:5px;padding:10px 15px;font:inherit;cursor:pointer}button:disabled{opacity:.6}input[type=email]{width:100%;padding:10px;border:1px solid #86939d;border-radius:4px;font:inherit;margin:5px 0 10px}label{display:block}small,.muted{color:#5a6674;font-size:13px}.badge{display:inline-block;background:#dceff0;color:#0a4b56;padding:3px 9px;border-radius:20px;font-weight:600}details{margin-top:12px}ul{padding-left:20px;margin:8px 0}li{margin-bottom:6px}.trap{position:absolute;left:-10000px}#message{font-weight:600}summary{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #b68122;outline-offset:2px}
+  </style>
+</head>
+<body>
+<? if (action) { ?>
+  <h2>Combinatorics-LSM1</h2>
+  <p><?= action === 'confirm' ? 'Confirmer votre inscription aux alertes du cours.' : 'Supprimer votre inscription aux alertes du cours.' ?></p>
+  <button id="action" data-action="<?= action ?>" data-token="<?= token ?>"><?= action === 'confirm' ? 'Confirmer / Confirm' : 'Se désabonner / Unsubscribe' ?></button>
+<? } else { ?>
+  <h2>Course updates / Actualités du cours</h2>
+  <? if (!state) { ?>
+    <p>Le suivi des mises à jour sera disponible prochainement. / Update tracking will be available soon.</p>
+  <? } else { ?>
+    <? if (state.latest) { ?>
+      <p><span class="badge">Documents updated / Documents mis à jour</span></p>
+      <p>Dernière mise à jour détectée : <time datetime="<?= state.latest ?>"><?= state.latest.slice(0,10) ?></time></p>
+    <? } else { ?>
+      <p>Suivi actif : aucune nouvelle modification depuis son activation. / Tracking active: no new changes since activation.</p>
+    <? } ?>
+    <p class="muted">Dernière vérification / Last checked: <time datetime="<?= state.checked ?>"><?= state.checked.slice(0,10) ?></time>. Vérification horaire.</p>
+    <details><summary>Recevoir les alertes / Email alerts</summary>
+      <form id="subscribe">
+        <label for="email">Adresse courriel / Email</label>
+        <input id="email" name="email" type="email" required maxlength="254" autocomplete="email">
+        <div class="trap" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <p><label><input type="checkbox" required> Je souhaite recevoir les mises à jour de ce cours. / I want updates for this course.</label></p>
+        <button type="submit">M’inscrire / Subscribe</button>
+        <p><small>Confirmation par courriel requise. Votre adresse est conservée uniquement pour ces alertes, n’est pas publiée et est supprimée au désabonnement. Un lien de désabonnement figure dans chaque alerte. / Email confirmation required. Your address is private and deleted when you unsubscribe.</small></p>
+      </form>
+    </details>
+  <? } ?>
+<? } ?>
+<p id="message" role="status" aria-live="polite"></p>
+<p><a href="<?= folderUrl ?>" rel="noopener">Ouvrir le dossier du cours / Open course folder</a></p>
+<script>
+  document.querySelectorAll('time').forEach(el=>{el.textContent=new Date(el.dateTime).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});});
+  function run(button, action) {
+    button.disabled=true;
+    document.getElementById('message').textContent='Traitement en cours… / Please wait…';
+    const runner=google.script.run.withSuccessHandler(message=>{
+      document.getElementById('message').textContent=message;
+      button.disabled=false;
+    }).withFailureHandler(error=>{
+      document.getElementById('message').textContent=error.message || 'Veuillez réessayer. / Please try again.';
+      button.disabled=false;
+    });
+    action(runner);
+  }
+  const form=document.getElementById('subscribe');
+  if(form) form.addEventListener('submit',event=>{
+    event.preventDefault();
+    run(form.querySelector('button'),runner=>runner.subscribe(form.elements.email.value,form.elements.website.value));
+  });
+  const button=document.getElementById('action');
+  if(button) button.addEventListener('click',()=>run(button,runner=>runner.applySubscription(button.dataset.action,button.dataset.token)));
+</script>
+</body></html>

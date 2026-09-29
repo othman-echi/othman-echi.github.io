@@ -25,7 +25,7 @@
       <p>Suivi actif : aucune nouvelle modification depuis son activation. / Tracking active: no new changes since activation.</p>
     <? } ?>
     <p class="muted">Dernière vérification / Last checked: <time datetime="<?= state.checked ?>"><?= state.checked.slice(0,10) ?></time>. Vérification horaire.</p>
-    <details><summary>Recevoir les alertes / Email alerts</summary>
+    <details open><summary>Recevoir les alertes / Email alerts</summary>
       <form id="subscribe">
         <label for="email">Adresse courriel / Email</label>
         <input id="email" name="email" type="email" required maxlength="254" autocomplete="email">

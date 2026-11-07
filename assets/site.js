@@ -492,7 +492,7 @@ const publications = [
     year: 2026,
     tags: ["topology"],
     title: "Chronology violation on locally finite quasiordered sets",
-    meta: "Othman Echi. Phys. Rev. D - Accepted 9 September, 2026.",
+    meta: "Othman Echi. Phys. Rev. D 114, 086014 (2026). Published 19 October 2026.",
     link: "https://doi.org/10.1103/pm11-f75t"
   }
 ];
@@ -625,10 +625,10 @@ function renderLatestNews() {
   item.setAttribute("data-reveal", "");
   item.innerHTML = `
     <time datetime="${latestNewsItem.year}">${latestNewsItem.year}</time>
-    <h3>Forthcoming paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
+    <h3>New paper in <em>${escapeHtml(latestNewsItem.journal)}</em></h3>
     <p>
       &ldquo;${escapeHtml(latestNewsItem.title)}&rdquo;
-      ${latestNewsItem.collaborators ? `(with ${escapeHtml(latestNewsItem.collaborators)}).` : "Accepted 9 September, 2026."}
+      ${latestNewsItem.collaborators ? `(with ${escapeHtml(latestNewsItem.collaborators)}).` : "Phys. Rev. D 114, 086014 (2026). Published 19 October 2026."}
     </p>
     ${latestNewsItem.comment ? `<div class="news-comment">${latestNewsItem.comment.map((paragraph, index) => `<p>${index === 0 ? "<strong>Comment.</strong> " : ""}${escapeHtml(paragraph)}</p>`).join("")}</div>` : ""}
     <a class="news-link" href="${latestNewsItem.link}" rel="noopener">Open DOI</a>

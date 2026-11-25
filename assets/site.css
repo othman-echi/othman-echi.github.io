@@ -1201,3 +1201,40 @@ img {
   flex-direction: column;
   gap: 0.15rem;
 }
+
+.chapter-panel {
+  width: 100%;
+  max-width: 680px;
+  margin-top: 24px;
+  padding: 20px 24px;
+  border: 2px solid #c49737;
+  border-radius: 4px;
+  background: #fff;
+  color: #172948;
+  text-shadow: none;
+}
+
+.chapter-panel h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: #172948;
+  overflow-wrap: anywhere;
+}
+
+.chapter-panel a {
+  display: block;
+  padding: 8px 0;
+  color: #155d47;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  overflow-wrap: anywhere;
+}
+
+.chapter-panel a:hover,
+.chapter-panel a:focus-visible {
+  color: #102b22;
+}
